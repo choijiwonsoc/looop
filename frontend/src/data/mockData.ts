@@ -51,7 +51,7 @@ export const mockTasks: Task[] = [
 
 export const mockIssues: Issue[] = [
   { id: 'i1', eventId: 'e1', description: 'Caterer running 30 min late on setup', severity: 'high', resolved: false, raisedBy: 'm2', createdAt: '' },
-  { id: 'i2', eventId: 'e1', description: 'Backup mic battery not charged', severity: 'medium', resolved: true, raisedBy: 'm4', resolvedBy: 'm4', createdAt: '', resolvedAt: '' },
+  { id: 'i2', eventId: 'e1', description: 'Backup mic battery not charged', severity: 'medium', resolved: true, raisedBy: 'm4', resolvedBy: 'm4', createdAt: '' },
   { id: 'i3', eventId: 'e1', description: 'Guest count mismatch with venue', severity: 'low', resolved: false, raisedBy: 'm1', createdAt: '' },
 ];
 

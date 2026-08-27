@@ -21,7 +21,7 @@ func CreateTask(w http.ResponseWriter, r *http.Request){
 		task,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatisInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(result)
@@ -47,3 +47,122 @@ func GetAllTasks(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(tasks)
 }
 
+
+func CompleteTask(w http.ResponseWriter, r *http.Request){
+	taskID:= chi.URLParam(r, "id")
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil{
+		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		return
+	}
+	var req CompleteTaskRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	collection := database.DB.Collection("tasks")
+	result, err := collection.UpdateOne(
+		context.Background(),
+		bson.M{"_id": objectID},
+		bson.M{"$set": bson.M{"status":req.Status, "followUp":req.FollowUp }}
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if result.MatchedCount == 0 {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":"Task resolved",
+		"taskId": taskID
+	})
+}
+
+func EditTask(w http.ResponseWriter, r *http.Request) {
+	taskID := chi.URLParam(r, "id")
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		return
+	}
+
+	var req EditTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Build the $set doc dynamically — only include fields that were actually sent
+	setFields := bson.M{}
+	if req.Notes != nil {
+		setFields["notes"] = *req.Notes
+	}
+	if req.Priority != nil {
+		setFields["priority"] = *req.Priority
+	}
+	if req.AssignedTo != nil {
+		setFields["assignedTo"] = *req.AssignedTo
+	}
+	if req.DueDay != nil {
+		setFields["dueDay"] = *req.DueDay
+	}
+
+	if len(setFields) == 0 {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	collection := database.DB.Collection("tasks")
+	result, err := collection.UpdateOne(
+		context.Background(),
+		bson.M{"_id": objectID},
+		bson.M{"$set": setFields},
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if result.MatchedCount == 0 {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "task updated",
+		"taskId": taskID,
+	})
+}
+
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
+	taskID := chi.URLParam(r, "id")
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		return
+	}
+
+	collection := database.DB.Collection("tasks")
+	result, err := collection.DeleteOne(
+		context.Background(),
+		bson.M{"_id": objectID},
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if result.DeletedCount == 0 {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "task deleted",
+		"taskId": taskID,
+	})
+}

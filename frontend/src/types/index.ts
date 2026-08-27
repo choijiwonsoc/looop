@@ -12,6 +12,7 @@ export interface EventBoard {
   id: string;
   name: string;
   type?: string; // 'wedding' | 'move' | 'conference' | 'household' | custom
+  description?: string;
   startDate: string; // ISO date
   endDate: string | null; // null = recurring / ongoing (covers the household use case)
   members: Member[];
@@ -29,6 +30,7 @@ export interface Task {
   dueDay?: number; // relative day number, optional
   createdAt: string;
   updatedAt: string;
+  followUp?: string[];
 }
 
 export interface Issue {
@@ -40,7 +42,7 @@ export interface Issue {
   raisedBy: string; // member id
   resolvedBy?: string;
   createdAt: string;
-  resolvedAt?: string;
+  followUp?: string[];
 }
 
 export interface TimelineItem {

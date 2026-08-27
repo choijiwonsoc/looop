@@ -1,4 +1,6 @@
-import { createEvent } from "../api"
+import { createEvent, editEvent, deleteEvent, getTasks, getIssues } from "../api-handlers/event"
+import { createTask, editTask, completeTask, deleteTask} from "../api-handlers/task"
+import { createIssue, editIssue, resolveIssue, deleteIssue} from "../api-handlers/issue"
 
 export function registerLooopTools() {
     //event tools
@@ -9,31 +11,45 @@ export function registerLooopTools() {
             type: 'object',
             properties: {
                 name: { type: 'string' },
-                type: { type: 'string', description: "e.g. 'wedding', 'conference', 'household'" },
-                startDate: { type: 'string', description: 'ISO date' },
-                endDate: { type: 'string', description: 'ISO date, omit for ongoing events' }
+                type: { type: 'string', description: "Choose one category out of wedding, party, conference, household or other'" },
+                description: { type: 'string', description: "Short description of event'" },
+                startDate: { type: 'string', description: 'ISO date, default to current date if none given' },
+                endDate: { type: 'string', description: 'ISO date, omit for ongoing events' },
 
             },
-            required: ['name', 'startDate']
+            required: ['name', 'type', 'description', 'startDate']
         },
         execute: async (input) => createEvent(input)
     })
 
     document.modelContext.registerTool({
         name: 'edit_event',
-        description: 'Edit an event name, type, or dates.',
+        description: 'Edit an event type, or dates.',
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
-                name: { type: 'string' },
                 type: { type: 'string' },
+                description: { type: 'string' },
                 startDate: { type: 'string' },
                 endDate: { type: 'string' },
             },
             required: ['eventId']
         },
         execute: async (input) => editEvent(input)
+    })
+
+    document.modelContext.registerTool({
+        name: 'delete_event',
+        description: 'Delete an event.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                eventId: { type: 'string' },
+            },
+            required: ['eventId']
+        },
+        execute: async (input) => deleteEvent(input)
     })
 
     //task tools
@@ -45,29 +61,28 @@ export function registerLooopTools() {
             properties: {
                 eventId: { type: 'string' },
                 title: { type: 'string' },
+                notes: { type: 'string' },
                 priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
                 assignedTo: { type: 'string', description: 'member id, omit to leave unassigned' },
                 dueDay: { type: 'number' },
-                notes: { type: 'string' },
             },
-            required: ['eventId', 'title', 'priority']
+            required: ['eventId', 'title', 'notes','priority']
         },
         execute: async (input) => createTask(input)
     })
 
     document.modelContext.registerTool({
         name: 'edit_task',
-        description: 'Edit a task — change its title, priority, assignee, due day, or notes.',
+        description: 'Edit a task — change its priority, assignee, due day, or notes.',
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
                 taskId: { type: 'string' },
-                title: { type: 'string' },
+                notes: { type: 'string' },
                 priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
                 assignedTo: { type: 'string' },
                 dueDay: { type: 'number' },
-                notes: { type: 'string' },
             },
             required: ['eventId', 'taskId']
         },
@@ -75,20 +90,33 @@ export function registerLooopTools() {
     })
 
     document.modelContext.registerTool({
-        name: 'resolve_task',
+        name: 'complete_task',
         description: 'Mark a task as done (or reopen it).',
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
                 taskId: { type: 'string' },
-                done: { type: 'boolean', description: 'true to complete, false to reopen' },
+                status: { type: 'string', enum:['todo', 'in_progress', 'done'] },
             },
-            required: ['eventId', 'taskId', 'done'],
+            required: ['eventId', 'taskId', 'status'],
         },
-        execute: async (input) => resolveTask(input)
+        execute: async (input) => completeTask(input)
 
     });
+
+    document.modelContext.registerTool({
+        name: 'delete_task',
+        description: 'Delete a task on an event board.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                taskId: { type: 'string' },
+            },
+            required: ['taskId']
+        },
+        execute: async (input) => deleteTask(input)
+    })
 
     //issue tools
     document.modelContext.registerTool({
@@ -140,6 +168,19 @@ export function registerLooopTools() {
 
     });
 
+    document.modelContext.registerTool({
+        name: 'delete_issue',
+        description: 'Delete an issue on an event board.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                issueId: { type: 'string' },
+            },
+            required: ['issueId']
+        },
+        execute: async (input) => deleteIssue(input)
+    })
+
     //context and summary
     document.modelContext.registerTool({
         name: 'get_event_summary',
@@ -151,8 +192,10 @@ export function registerLooopTools() {
         },
         execute: async (input) => {
             // pull from your app's current state instead of a dedicated backend endpoint
-            const tasks = getTasksForEvent(input.eventId);   // however you access current state
-            const issues = getIssuesForEvent(input.eventId);
+            const [tasks, issues] = await Promise.all([
+                getTasks(input.eventId),
+                getIssues(input.eventId),
+            ])
 
             const urgentOpen = tasks.filter(t => t.priority === 'urgent' && t.status !== 'done').length;
             const doneCount = tasks.filter(t => t.status === 'done').length;
