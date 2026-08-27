@@ -4,12 +4,12 @@ import { EventCard } from '../components/EventCard';
 
 export function EventsListPage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 sm:px-10 py-12 sm:py-16">
-      <div className="mb-14 max-w-xl">
+    <div className="mx-auto px-6 sm:px-10 py-12 sm:py-16">
+      <div className="mb-14 ">
         <h1 className="text-4xl sm:text-5xl leading-tight mb-4">
           The plan lives here.<br />Not scattered across five chats.
         </h1>
-        <p className="text-base text-ink-soft leading-relaxed mb-5 max-w-md">
+        <p className="text-base text-ink-soft leading-relaxed mb-5">
           Every event gets one board. Add it, ask your agent about it, or just click around —
           everyone sees the same live picture.
         </p>
