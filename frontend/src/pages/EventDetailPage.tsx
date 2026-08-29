@@ -169,9 +169,6 @@ export function EventDetailPage() {
             onAddIssue={addIssue}
           />
         )}
-        {activeTab === "summary" && (
-          <SummaryPanel tasks={tasks} issues={issues} />
-        )}
         {activeTab === "history" && (
           <HistoryLog entries={history} members={event.members} />
         )}

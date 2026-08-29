@@ -1,24 +1,41 @@
 package main
 
-import(
+import (
 	"encoding/json"
 	"log"
+	"looop-backend/database"
+	"looop-backend/handlers"
 	"net/http"
-	"github.com/go-chi/cors"
+	"os"
+
 	"github.com/go-chi/chi/v5"
-	//"database"
-	"handlers"
+	"github.com/go-chi/cors"
+	"github.com/joho/godotenv"
 )
 
-func main(){
-	//database.Connect("mongodb+srv://username:password@cluster.mongodb.net/","mydb")
+func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
+	mongoURI := os.Getenv("MONGODB_URI")
+	mongoDB := os.Getenv("MONGODB_DATABASE")
+
+	database.Connect(mongoURI, mongoDB)
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
 	}))
-	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request){
+	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Server is running!",
+		})
 	})
 
 	//events
@@ -26,14 +43,14 @@ func main(){
 	r.Get("/api/get-events", handlers.GetAllEvents)
 	r.Patch("/api/events/{id}", handlers.EditEvent)
 	r.Delete("/api/events/{id}", handlers.DeleteEvent)
-	r.Get("/events/{eventId}/tasks", GetTasks)
-	r.Get("/events/{eventId}/issues", GetIssues)
+	r.Get("/events/{eventId}/tasks", handlers.GetTasks)
+	r.Get("/events/{eventId}/issues", handlers.GetIssues)
 
 	//tasks
 	r.Post("/api/tasks", handlers.CreateTask)
 	r.Get("/api/get-tasks", handlers.GetAllTasks)
-	r.Patch("/api/events/{eventId}/tasks/{id}/status", handlers.ResolveTask)
-	r.Patch("/api/events/{eventId}/tasks/{id}", handlers.ResolveTask)
+	r.Patch("/api/events/{eventId}/tasks/{id}/status", handlers.CompleteTask)
+	r.Patch("/api/events/{eventId}/tasks/{id}", handlers.EditTask)
 	r.Delete("/api/events/{eventId}/tasks/{id}", handlers.DeleteTask)
 
 	//issues
@@ -42,7 +59,6 @@ func main(){
 	r.Patch("/api/events/{eventId}/issues/{id}/status", handlers.ResolveIssue)
 	r.Patch("/api/events/{eventId}/issues/{id}", handlers.EditIssue)
 	r.Delete("/api/events/{eventId}/issues/{id}", handlers.DeleteIssue)
-
 
 	log.Println("Server running on :8080")
 	http.ListenAndServe(":8080", r)

@@ -2,16 +2,20 @@ package handlers
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"looop-backend/database"
+	"looop-backend/models"
 	"net/http"
-	"database"
-	"models"
+
+	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateEvent(w http.ResponseWriter, r *http.Request){
-	var event models.event
+func CreateEvent(w http.ResponseWriter, r *http.Request) {
+	var event models.Event
 
-	if err := json.NewDecoder(r.body).Decode(&event); err != nil{
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -27,26 +31,25 @@ func CreateEvent(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(result)
 }
 
-func GetAllEvents(w http.ResponseWriter, r *http.Request){
+func GetAllEvents(w http.ResponseWriter, r *http.Request) {
 	collection := database.DB.Collection("events")
 	cursor, err := collection.Find(
 		context.Background(),
 		bson.M{},
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.InternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(context.Background())
-	var events []models.event
+	var events []models.Event
 	if err := cursor.All(context.Background(), &events); err != nil {
-		http.Error(w, err.Error(), http.InternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
 }
-
 
 func EditEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := chi.URLParam(r, "id")
@@ -56,7 +59,7 @@ func EditEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req EditEventRequest
+	var req models.EditEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -64,16 +67,16 @@ func EditEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Build the $set doc dynamically — only include fields that were actually sent
 	setFields := bson.M{}
-	if req.Notes != nil {
+	if req.Type != nil {
 		setFields["type"] = *req.Type
 	}
-	if req.Priority != nil {
+	if req.Description != nil {
 		setFields["description"] = *req.Description
 	}
-	if req.AssignedTo != nil {
+	if req.StartDate != nil {
 		setFields["startDate"] = *req.StartDate
 	}
-	if req.DueDay != nil {
+	if req.EndDate != nil {
 		setFields["endDate"] = *req.EndDate
 	}
 

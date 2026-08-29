@@ -2,16 +2,20 @@ package handlers
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"looop-backend/database"
+	"looop-backend/models"
 	"net/http"
-	"database"
-	"models"
+
+	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateTask(w http.ResponseWriter, r *http.Request){
-	var task models.task
+func CreateTask(w http.ResponseWriter, r *http.Request) {
+	var task models.Task
 
-	if err := json.NewDecoder(r.body).Decode(&task); err != nil{
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -27,35 +31,34 @@ func CreateTask(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(result)
 }
 
-func GetAllTasks(w http.ResponseWriter, r *http.Request){
+func GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	collection := database.DB.Collection("tasks")
 	cursor, err := collection.Find(
 		context.Background(),
 		bson.M{},
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.InternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer cursor.Close(context.Background())
-	var tasks []models.task
+	var tasks []models.Task
 	if err := cursor.All(context.Background(), &tasks); err != nil {
-		http.Error(w, err.Error(), http.InternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tasks)
 }
 
-
-func CompleteTask(w http.ResponseWriter, r *http.Request){
-	taskID:= chi.URLParam(r, "id")
+func CompleteTask(w http.ResponseWriter, r *http.Request) {
+	taskID := chi.URLParam(r, "id")
 	objectID, err := primitive.ObjectIDFromHex(taskID)
-	if err != nil{
+	if err != nil {
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
 		return
 	}
-	var req CompleteTaskRequest
+	var req models.CompleteTaskRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -65,7 +68,7 @@ func CompleteTask(w http.ResponseWriter, r *http.Request){
 	result, err := collection.UpdateOne(
 		context.Background(),
 		bson.M{"_id": objectID},
-		bson.M{"$set": bson.M{"status":req.Status, "followUp":req.FollowUp }}
+		bson.M{"$set": bson.M{"status": req.Status, "followUp": req.FollowUp}},
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -77,8 +80,8 @@ func CompleteTask(w http.ResponseWriter, r *http.Request){
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":"Task resolved",
-		"taskId": taskID
+		"message": "Task resolved",
+		"taskId":  taskID,
 	})
 }
 
@@ -90,7 +93,7 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req EditTaskRequest
+	var req models.EditTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -134,7 +137,7 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "task updated",
-		"taskId": taskID,
+		"taskId":  taskID,
 	})
 }
 
@@ -163,6 +166,6 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "task deleted",
-		"taskId": taskID,
+		"taskId":  taskID,
 	})
 }
