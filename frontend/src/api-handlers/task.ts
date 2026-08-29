@@ -17,7 +17,7 @@ export async function createTask(input:{
     eventId: string;
     title: string;
     notes: string;
-    priority: TaskPriority;
+    priority: Priority;
     status: TaskStatus;
     assignedTo: string;
     dueDate: number;
