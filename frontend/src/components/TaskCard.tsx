@@ -19,6 +19,9 @@ export function TaskCard({ task, assignee, onToggleDone }: TaskCardProps) {
         <p className={`text-sm leading-snug m-0 ${done ? 'line-through text-ink-soft' : ''}`}>{task.title}</p>
       </div>
       <div className="flex items-center gap-2 pl-[30px] mt-3">
+        {task.notes}
+      </div>
+      <div className="flex items-center gap-2 pl-[30px] mt-3">
         <PriorityBadge priority={task.priority} />
         {task.dueDay != null && <span className="text-[11px] text-ink-soft">Day {task.dueDay}</span>}
         <div className="flex-1" />

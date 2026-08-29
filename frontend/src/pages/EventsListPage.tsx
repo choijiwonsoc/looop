@@ -1,8 +1,18 @@
 import { Link } from 'react-router-dom';
-import { mockEvents } from '../data/mockData';
+import { mockEvents, mockTasks, mockIssues } from '../data/mockData';
 import { EventCard } from '../components/EventCard';
+import { EventPulse } from '../components/EventPulse';
+import { computeHealth } from '../utils/health';
 
 export function EventsListPage() {
+  const withHealth = mockEvents.map((event) => ({
+    event,
+    health: computeHealth(
+      mockTasks.filter((t) => t.eventId === event.id),
+      mockIssues.filter((i) => i.eventId === event.id)
+    ),
+  }));
+
   return (
     <div className="mx-auto px-6 sm:px-10 py-12 sm:py-16">
       <div className="mb-14 ">
@@ -20,6 +30,7 @@ export function EventsListPage() {
           + New event
         </Link>
       </div>
+      <EventPulse events={withHealth} />
 
       <div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-ink-soft border-b border-line pb-3 mb-5">

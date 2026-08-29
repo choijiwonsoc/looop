@@ -1,43 +1,69 @@
-import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { mockEvents, mockTasks, mockIssues, mockTimeline, mockHistory, currentUserId } from '../data/mockData';
-import type { Task, Issue, Priority, IssueSeverity } from '../types';
-import { KanbanBoard } from '../components/KanbanBoard';
-import { IssuesList } from '../components/IssuesList';
-import { TimelineView } from '../components/TimelineView';
-import { SummaryPanel } from '../components/SummaryPanel';
-import { HistoryLog } from '../components/HistoryLog';
-import { Avatar } from '../components/Avatar';
-import { ShareLinkModal } from '../components/ShareLinkModal';
+import { useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import {
+  mockEvents,
+  mockTasks,
+  mockIssues,
+  mockTimeline,
+  mockHistory,
+  currentUserId,
+} from "../data/mockData";
+import type { Task, Issue, Priority, IssueSeverity } from "../types";
+import { KanbanBoard } from "../components/KanbanBoard";
+import { IssuesList } from "../components/IssuesList";
+import { TimelineRoadmap } from "../components/TimelineRoadmap";
+import { TimelineView } from "../components/TimelineView";
+import { SummaryPanel } from "../components/SummaryPanel";
+import { HistoryLog } from "../components/HistoryLog";
+import { Avatar } from "../components/Avatar";
+import { ShareLinkModal } from "../components/ShareLinkModal";
 
-type Tab = 'board' | 'timeline' | 'issues' | 'summary' | 'history';
+type Tab = "board" | "timeline" | "issues" | "summary" | "history";
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'board', label: 'Board' },
-  { key: 'timeline', label: 'Timeline' },
-  { key: 'issues', label: 'Issues' },
-  { key: 'summary', label: 'Summary' },
-  { key: 'history', label: 'History' },
+  { key: "board", label: "Board" },
+  { key: "timeline", label: "Timeline" },
+  { key: "issues", label: "Issues" },
+  { key: "summary", label: "Summary" },
+  { key: "history", label: "History" },
 ];
 
 export function EventDetailPage() {
   const { eventId } = useParams();
   const event = mockEvents.find((e) => e.id === eventId);
 
-  const [tasks, setTasks] = useState<Task[]>(mockTasks.filter((t) => t.eventId === eventId));
-  const [issues, setIssues] = useState<Issue[]>(mockIssues.filter((i) => i.eventId === eventId));
-  const timeline = useMemo(() => mockTimeline.filter((t) => t.eventId === eventId), [eventId]);
-  const history = useMemo(() => mockHistory.filter((h) => h.eventId === eventId), [eventId]);
+  const [tasks, setTasks] = useState<Task[]>(
+    mockTasks.filter((t) => t.eventId === eventId),
+  );
+  const [issues, setIssues] = useState<Issue[]>(
+    mockIssues.filter((i) => i.eventId === eventId),
+  );
+  const timeline = useMemo(
+    () => mockTimeline.filter((t) => t.eventId === eventId),
+    [eventId],
+  );
+  const history = useMemo(
+    () => mockHistory.filter((h) => h.eventId === eventId),
+    [eventId],
+  );
 
-  const [activeTab, setActiveTab] = useState<Tab>('board');
+  const [activeTab, setActiveTab] = useState<Tab>("board");
   const [shareOpen, setShareOpen] = useState(false);
 
   if (!event) {
-    return <div className="p-16 text-center text-ink-soft">Event not found.</div>;
+    return (
+      <div className="p-16 text-center text-ink-soft">Event not found.</div>
+    );
   }
 
   function toggleTaskDone(taskId: string) {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t)));
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, status: t.status === "done" ? "todo" : "done" }
+          : t,
+      ),
+    );
   }
 
   function addTask(title: string, priority: Priority) {
@@ -46,7 +72,7 @@ export function EventDetailPage() {
       eventId: event!.id,
       title,
       priority,
-      status: 'todo',
+      status: "todo",
       assignedTo: currentUserId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -55,7 +81,9 @@ export function EventDetailPage() {
   }
 
   function toggleIssueResolved(issueId: string) {
-    setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, resolved: !i.resolved } : i)));
+    setIssues((prev) =>
+      prev.map((i) => (i.id === issueId ? { ...i, resolved: !i.resolved } : i)),
+    );
   }
 
   function addIssue(description: string, severity: IssueSeverity) {
@@ -72,7 +100,7 @@ export function EventDetailPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 sm:px-10 py-10 sm:py-12">
+    <div className="mx-auto px-6 sm:px-10 py-10 sm:py-12">
       <div className="flex justify-between items-end flex-wrap gap-4 mb-8">
         <div>
           {event.type && (
@@ -85,7 +113,7 @@ export function EventDetailPage() {
         <div className="flex items-center gap-4">
           <div className="flex">
             {event.members.map((m, i) => (
-              <div key={m.id} className={i > 0 ? '-ml-1.5' : ''}>
+              <div key={m.id} className={i > 0 ? "-ml-1.5" : ""}>
                 <Avatar member={m} size={28} />
               </div>
             ))}
@@ -105,7 +133,9 @@ export function EventDetailPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-2 py-3 text-sm border-b-2 -mb-px whitespace-nowrap transition-colors ${
-              activeTab === tab.key ? 'text-ink border-loop font-semibold' : 'text-ink-soft border-transparent hover:text-ink'
+              activeTab === tab.key
+                ? "text-ink border-loop font-semibold"
+                : "text-ink-soft border-transparent hover:text-ink"
             }`}
           >
             {tab.label}
@@ -114,18 +144,45 @@ export function EventDetailPage() {
       </div>
 
       <div>
-        {activeTab === 'board' && (
-          <KanbanBoard tasks={tasks} members={event.members} onToggleTaskDone={toggleTaskDone} onAddTask={addTask} />
+        {activeTab === "board" && (
+          <KanbanBoard
+            tasks={tasks}
+            members={event.members}
+            onToggleTaskDone={toggleTaskDone}
+            onAddTask={addTask}
+          />
         )}
-        {activeTab === 'timeline' && <TimelineView items={timeline} />}
-        {activeTab === 'issues' && (
-          <IssuesList issues={issues} members={event.members} onToggleResolved={toggleIssueResolved} onAddIssue={addIssue} />
+        {activeTab === "timeline" &&
+          (event.endDate ? (
+            <div>
+              <TimelineRoadmap event={event} tasks={tasks} items={timeline} />
+              <SummaryPanel tasks={tasks} issues={issues} />
+            </div>
+          ) : (
+            <TimelineView items={timeline} />
+          ))}
+        {activeTab === "issues" && (
+          <IssuesList
+            issues={issues}
+            members={event.members}
+            onToggleResolved={toggleIssueResolved}
+            onAddIssue={addIssue}
+          />
         )}
-        {activeTab === 'summary' && <SummaryPanel tasks={tasks} issues={issues} />}
-        {activeTab === 'history' && <HistoryLog entries={history} members={event.members} />}
+        {activeTab === "summary" && (
+          <SummaryPanel tasks={tasks} issues={issues} />
+        )}
+        {activeTab === "history" && (
+          <HistoryLog entries={history} members={event.members} />
+        )}
       </div>
 
-      {shareOpen && <ShareLinkModal inviteCode={event.inviteCode} onClose={() => setShareOpen(false)} />}
+      {shareOpen && (
+        <ShareLinkModal
+          inviteCode={event.inviteCode}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   );
 }

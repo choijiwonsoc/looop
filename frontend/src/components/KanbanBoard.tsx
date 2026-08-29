@@ -27,7 +27,7 @@ export function KanbanBoard({ tasks, members, onToggleTaskDone, onAddTask }: Kan
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start">
       {COLUMNS.map((col) => {
         const colTasks = tasks.filter((t) => t.priority === col.key);
         const openCount = colTasks.filter((t) => t.status !== 'done').length;
