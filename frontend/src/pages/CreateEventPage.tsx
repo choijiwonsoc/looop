@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createEvent } from '../api-handlers/event';
 import { Member } from '../types';
 
-const EVENT_TYPES = ['Wedding', 'Conference', 'Party', 'Household', 'Other'];
+const EVENT_TYPES = ['Project', 'Conference', 'Party', 'Household', 'Other'];
 
 export function CreateEventPage() {
   const navigate = useNavigate();

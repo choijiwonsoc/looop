@@ -13,7 +13,8 @@ export const mockEvents: EventBoard[] = [
   {
     id: 'e1',
     name: "Priya & Dan's Wedding",
-    type: 'wedding',
+    description: 'Two-day celebration — ceremony Saturday, brunch Sunday.',
+    type: 'project',
     startDate: '2026-10-02',
     endDate: '2026-10-04',
     members: mockMembers,
@@ -22,6 +23,7 @@ export const mockEvents: EventBoard[] = [
   {
     id: 'e2',
     name: 'Apartment 4B',
+    description: 'Shared chores, groceries, and bills for the flat.',
     type: 'household',
     startDate: '2026-01-01',
     endDate: null,
@@ -31,6 +33,7 @@ export const mockEvents: EventBoard[] = [
   {
     id: 'e3',
     name: 'Q4 Offsite',
+    description: 'Three-day team offsite — logistics, sessions, and socials.',
     type: 'conference',
     startDate: '2026-11-14',
     endDate: '2026-11-16',

@@ -11,7 +11,7 @@ export function registerLooopTools() {
             type: 'object',
             properties: {
                 name: { type: 'string' },
-                type: { type: 'string', enum: ['wedding', 'party', 'conference', 'household', 'other'] },
+                type: { type: 'string', enum: ['project', 'party', 'conference', 'household', 'other'] },
                 description: { type: 'string', description: "Short description of event'" },
                 startDate: { type: 'string', description: 'ISO date, default to current date if none given' },
                 endDate: { type: 'string', description: 'ISO date, omit for ongoing events' },
@@ -219,7 +219,7 @@ export function registerLooopTools() {
     document.modelContext.registerTool({
         name: 'generate_starter_tasks',
         description:
-            "Generate a sensible starter checklist of tasks for a newly created event, based on its type (wedding, move, conference, etc). Call this right after create_event if the user hasn't specified their own tasks, so they don't start from a blank board.",
+            "Generate a sensible starter checklist of tasks for a newly created event, based on its type (project, party, household, conference, etc). Call this right after create_event if the user hasn't specified their own tasks, so they don't start from a blank board.",
         inputSchema: {
             type: 'object',
             properties: {

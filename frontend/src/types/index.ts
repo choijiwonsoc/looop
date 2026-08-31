@@ -11,7 +11,7 @@ export interface Member {
 export interface EventBoard {
   id: string;
   name: string;
-  type?: string; // 'wedding' | 'move' | 'conference' | 'household' | custom
+  type?: string; // 'project' | 'move' | 'conference' | 'household' | custom
   description?: string;
   startDate: string; // ISO date
   endDate: string | null; // null = recurring / ongoing (covers the household use case)
@@ -27,7 +27,9 @@ export interface Task {
   priority: Priority;
   status: TaskStatus;
   assignedTo: string | null; // member id
-  dueDay?: number; // relative day number, optional
+  dueDay?: number;
+  startDay?: number;    // multi-day tasks: first day (inclusive)
+  endDay?: number; 
   createdAt: string;
   updatedAt: string;
   followUp?: string[];
