@@ -11,9 +11,10 @@ interface TaskCardProps {
   onToggleDone: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onComplete: ()=> void;
 }
 
-export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete, onComplete }: TaskCardProps) {
   const done = task.status === 'done';
   return (
     <Card className={`relative group ${done ? 'opacity-55' : ''}`}>
@@ -35,6 +36,11 @@ export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete }: Tas
         {task.dueDay != null && <span className="text-[11px] text-ink-soft">Day {task.dueDay}</span>}
         <div className="flex-1" />
         <Avatar member={assignee} size={22} />
+      </div>
+      <div className="flex items-center gap-2 pl-[30px] mt-3">
+        <button onClick={onComplete}>
+          Mark Complete
+          </button>
       </div>
     </Card>
   );

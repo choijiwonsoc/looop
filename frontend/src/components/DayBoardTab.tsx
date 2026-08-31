@@ -5,6 +5,7 @@ import { TaskDayColumns } from './TaskDayColumns';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { currentDayIndex, daysBetween, formatDayDate } from '../utils/dates';
+import { TaskStatus } from '../types';
 
 interface DayBoardTabProps {
   event: EventBoard;
@@ -14,6 +15,7 @@ interface DayBoardTabProps {
   onAddTask: (input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; day: number }) => void;
   onEditTask: (taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null }) => void;
   onDeleteTask: (taskId: string) => void;
+  onCompleteTask: (taskId: string) => void;
 }
 
 function taskSpansDay(task: Task, day: number): boolean {
@@ -22,7 +24,7 @@ function taskSpansDay(task: Task, day: number): boolean {
   return true;
 }
 
-export function DayBoardTab({ event, tasks, currentUserId, onToggleTaskDone, onAddTask, onEditTask, onDeleteTask }: DayBoardTabProps) {
+export function DayBoardTab({ event, tasks, currentUserId, onToggleTaskDone, onAddTask, onEditTask, onDeleteTask, onCompleteTask }: DayBoardTabProps) {
   const rawToday = currentDayIndex(event.startDate);
   const maxTaskDay = tasks.reduce((max, t) => {
     const c = [t.dueDay, t.startDay, t.endDay].filter((v): v is number => v !== undefined);
@@ -34,6 +36,7 @@ export function DayBoardTab({ event, tasks, currentUserId, onToggleTaskDone, onA
   const [modalPriority, setModalPriority] = useState<Priority | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
 
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
   const dayTasks = useMemo(() => tasks.filter((t) => taskSpansDay(t, selectedDay)), [tasks, selectedDay]);
@@ -89,6 +92,7 @@ export function DayBoardTab({ event, tasks, currentUserId, onToggleTaskDone, onA
           onAddTaskForPriority={(priority) => setModalPriority(priority)}
           onEditTask={setEditingTask}
           onDeleteTask={setDeletingTask}
+          onCompleteTask={setCompletingTask}
         />
       </div>
 
@@ -117,6 +121,14 @@ export function DayBoardTab({ event, tasks, currentUserId, onToggleTaskDone, onA
           message={`"${deletingTask.title}" will be removed from the board.`}
           onConfirm={() => { onDeleteTask(deletingTask.id); setDeletingTask(null); }}
           onCancel={() => setDeletingTask(null)}
+        />
+      )}
+      {completingTask && (
+        <ConfirmDialog
+          title="Delete this task?"
+          message={`"${completingTask.title}" will be marked completed.`}
+          onConfirm={() => { onCompleteTask(completingTask.id); setCompletingTask(null); }}
+          onCancel={() => setCompletingTask(null)}
         />
       )}
     </div>

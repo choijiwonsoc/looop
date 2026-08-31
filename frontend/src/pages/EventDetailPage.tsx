@@ -69,6 +69,11 @@ export function EventDetailPage() {
   }
   function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null }) {
   setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t)));
+  //editTask(??)
+}
+
+function completeTask(taskId: string) {
+  setTasks((prev) => prev.filter((t) => t.id !== taskId));
 }
 
 function deleteTask(taskId: string) {
@@ -136,6 +141,7 @@ function deleteIssue(issueId: string) {
     onAddTask={addTask}
     onEditTask={editTask}
     onDeleteTask={deleteTask}
+    onCompleteTask={completeTask}
   />
 )}
 {activeTab === "activity" && (
