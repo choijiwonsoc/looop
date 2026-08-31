@@ -65,6 +65,8 @@ export function registerLooopTools() {
                 priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
                 assignedTo: { type: 'string', description: 'member id, omit to leave unassigned' },
                 dueDay: { type: 'number' },
+                startDay: { type: 'number' },
+                endDay: { type: 'number' },
             },
             required: ['eventId', 'title', 'notes', 'priority']
         },

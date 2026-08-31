@@ -20,7 +20,9 @@ export async function createTask(input:{
     priority: Priority;
     status: TaskStatus;
     assignedTo: string;
-    dueDate: number;
+    dueDay: number;
+    startDay: number,
+    endDay: number,
     createdAt: string;
     updatedAt: string;
     followUp?: string[];
@@ -38,7 +40,7 @@ export async function createTask(input:{
             priority: input.priority,
             status: input.status,
             assignedTo: input.assignedTo,
-            dueDate: input.dueDate,
+            dueDay: input.dueDay,
             createdAt: input.createdAt,
             updatedAt: input.updatedAt,
             followUp: input.followUp,
