@@ -2,6 +2,7 @@ import { EventBoard, Task, Issue, IssueSeverity, TaskStatus, Member } from "../t
 import { API_BASE_URL } from "../api";
 
 export async function getEvents(): Promise<EventBoard[]>{
+  console.log(API_BASE_URL);
     const response = await fetch(`${API_BASE_URL}/api/events`);
 
     if(!response.ok){

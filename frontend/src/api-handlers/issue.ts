@@ -70,7 +70,7 @@ export async function editIssue(input: {
   followUp?: string[];
 }): Promise<Issue> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}/api/issues/${input.issueId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -47,7 +47,7 @@ func GetAllEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer cursor.Close(context.Background())
-	var events []models.Event
+	events := make([]models.Event, 0)
 	if err := cursor.All(context.Background(), &events); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -160,7 +160,7 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	var tasks []models.Task
+	tasks := make([]models.Task, 0)
 	if err := cursor.All(context.Background(), &tasks); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -186,7 +186,7 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 	}
 	defer cursor.Close(context.Background())
 
-	var issues []models.Issue
+	issues := make([]models.Issue, 0)
 	if err := cursor.All(context.Background(), &issues); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

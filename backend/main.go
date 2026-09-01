@@ -26,7 +26,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE", "PATCH"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
 	}))
 	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +44,8 @@ func main() {
 	r.Get("/api/events", handlers.GetAllEvents)
 	r.Patch("/api/events/{id}", handlers.EditEvent)
 	r.Delete("/api/events/{id}", handlers.DeleteEvent)
-	r.Get("/events/{eventId}/tasks", handlers.GetTasks)
-	r.Get("/events/{eventId}/issues", handlers.GetIssues)
+	r.Get("/api/events/{eventId}/tasks", handlers.GetTasks)
+	r.Get("/api/events/{eventId}/issues", handlers.GetIssues)
 
 	//tasks
 	r.Post("/api/tasks", handlers.CreateTask)

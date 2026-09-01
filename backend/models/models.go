@@ -37,13 +37,17 @@ const (
 type HistoryAction string
 
 const (
-	ActionTaskCreated        HistoryAction = "task_created"
-	ActionTaskCompleted      HistoryAction = "task_completed"
-	ActionTaskStatusChanged  HistoryAction = "task_status_changed"
-	ActionIssueFlagged       HistoryAction = "issue_flagged"
-	ActionIssueResolved      HistoryAction = "issue_resolved"
-	ActionMemberJoined       HistoryAction = "member_joined"
-	ActionTimelineItemAdded  HistoryAction = "timeline_item_added"
+	ActionTaskCreated       HistoryAction = "task_created"
+	ActionTaskEdited        HistoryAction = "task_edited"
+	ActionTaskCompleted     HistoryAction = "task_completed"
+	ActionTaskStatusChanged HistoryAction = "task_status_changed"
+	ActionTaskDeleted       HistoryAction = "task_deleted"
+	ActionIssueFlagged      HistoryAction = "issue_flagged"
+	ActionIssueEdited       HistoryAction = "issue_edited"
+	ActionIssueResolved     HistoryAction = "issue_resolved"
+	ActionIssueDeleted      HistoryAction = "issue_deleted"
+	ActionMemberJoined      HistoryAction = "member_joined"
+	ActionTimelineItemAdded HistoryAction = "timeline_item_added"
 )
 
 // ─────────────────────────────────────────────
@@ -61,15 +65,15 @@ type Member struct {
 // ─────────────────────────────────────────────
 
 type Event struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name       string             `bson:"name" json:"name"`
-	Type       string             `bson:"type,omitempty" json:"type,omitempty"`
-	Description string      `bson:"description,omitempty" json:"description,omitempty"`
-	StartDate  string             `bson:"startDate" json:"startDate"`
-	EndDate    *string            `bson:"endDate,omitempty" json:"endDate,omitempty"` // nil = ongoing
-	Members    []Member           `bson:"members" json:"members"`
-	InviteCode string             `bson:"inviteCode" json:"inviteCode"`
-	CreatedAt  time.Time          `bson:"createdAt" json:"createdAt"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name        string             `bson:"name" json:"name"`
+	Type        string             `bson:"type,omitempty" json:"type,omitempty"`
+	Description string             `bson:"description,omitempty" json:"description,omitempty"`
+	StartDate   string             `bson:"startDate" json:"startDate"`
+	EndDate     *string            `bson:"endDate,omitempty" json:"endDate,omitempty"` // nil = ongoing
+	Members     []Member           `bson:"members" json:"members"`
+	InviteCode  string             `bson:"inviteCode" json:"inviteCode"`
+	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
 }
 
 // ─────────────────────────────────────────────
@@ -77,17 +81,17 @@ type Event struct {
 // ─────────────────────────────────────────────
 
 type Task struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	EventID     primitive.ObjectID `bson:"eventId" json:"eventId"`
-	Title       string             `bson:"title" json:"title"`
-	Notes       string             `bson:"notes,omitempty" json:"notes,omitempty"`
-	Priority    Priority           `bson:"priority" json:"priority"`
-	Status      TaskStatus         `bson:"status" json:"status"`
-	AssignedTo  *string            `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"` // member id
+	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	EventID    primitive.ObjectID `bson:"eventId" json:"eventId"`
+	Title      string             `bson:"title" json:"title"`
+	Notes      string             `bson:"notes,omitempty" json:"notes,omitempty"`
+	Priority   Priority           `bson:"priority" json:"priority"`
+	Status     TaskStatus         `bson:"status" json:"status"`
+	AssignedTo *string            `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"` // member id
 	StartDay   *string            `bson:"startDay,omitempty" json:"startDay,omitempty"`
 	EndDay     *string            `bson:"endDay,omitempty" json:"endDay,omitempty"`
-	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+	CreatedAt  time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt  time.Time          `bson:"updatedAt" json:"updatedAt"`
 	FollowUp   []string           `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
 
@@ -96,15 +100,15 @@ type Task struct {
 // ─────────────────────────────────────────────
 
 type Issue struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	EventID    primitive.ObjectID `bson:"eventId" json:"eventId"`
-	Description string            `bson:"description" json:"description"`
-	Severity   IssueSeverity      `bson:"severity" json:"severity"`
-	Resolved   bool               `bson:"resolved" json:"resolved"`
-	RaisedBy   string             `bson:"raisedBy" json:"raisedBy"` // member id
-	ResolvedBy *string            `bson:"resolvedBy,omitempty" json:"resolvedBy,omitempty"`
-	CreatedAt  time.Time          `bson:"createdAt" json:"createdAt"`
-	FollowUp   []string           `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	EventID     primitive.ObjectID `bson:"eventId" json:"eventId"`
+	Description string             `bson:"description" json:"description"`
+	Severity    IssueSeverity      `bson:"severity" json:"severity"`
+	Resolved    bool               `bson:"resolved" json:"resolved"`
+	RaisedBy    string             `bson:"raisedBy" json:"raisedBy"` // member id
+	ResolvedBy  *string            `bson:"resolvedBy,omitempty" json:"resolvedBy,omitempty"`
+	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	FollowUp    []string           `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
 
 // ─────────────────────────────────────────────
@@ -133,36 +137,39 @@ type HistoryEntry struct {
 }
 
 type EditEventRequest struct {
-	Name *string        `json:"type,omitempty"`
-	Type *string        `json:"type,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	StartDate *string        `json:"startDate,omitempty"`
-	EndDate *string        `json:"endDate,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Type        *string `json:"type,omitempty"`
+	Description *string `json:"description,omitempty"`
+	StartDate   *string `json:"startDate,omitempty"`
+	EndDate     *string `json:"endDate,omitempty"`
 }
 
 type CompleteTaskRequest struct {
-	Status string `bson:"status" json:"status"`
+	Status   string   `bson:"status" json:"status"`
 	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	ActorID  string   `json:"actorId,omitempty"`
 }
 
 type EditTaskRequest struct {
-	Title *string        `json:"description,omitempty"`
-	Notes *string        `json:"description,omitempty"`
-	Priority    *Priority `json:"priority,omitempty"`
-	AssignedTo *string        `json:"assignedTo,omitempty"`
-	StartDay *string        `json:"startDay,omitempty"`
-	EndDay *string        `json:"endDay,omitempty"`
-	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	Title      *string   `json:"title,omitempty"`
+	Notes      *string   `json:"notes,omitempty"`
+	Priority   *Priority `json:"priority,omitempty"`
+	AssignedTo *string   `json:"assignedTo,omitempty"`
+	StartDay   *string   `json:"startDay,omitempty"`
+	EndDay     *string   `json:"endDay,omitempty"`
+	FollowUp   []string  `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	ActorID    string    `json:"actorId,omitempty"`
 }
 
 type ResolveIssueRequest struct {
-	Resolved bool `bson:"resolved" json:"resolved"`
-	ResolvedBy string `bson:"resolvedBy,omitempty" json:"resolvedBy,omitempty"`
-	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	Resolved   bool     `bson:"resolved" json:"resolved"`
+	ResolvedBy string   `bson:"resolvedBy,omitempty" json:"resolvedBy,omitempty"`
+	FollowUp   []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
 
 type EditIssueRequest struct {
 	Description *string        `json:"description,omitempty"`
 	Severity    *IssueSeverity `json:"severity,omitempty"`
-	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	FollowUp    []string       `bson:"followUp,omitempty" json:"followUp,omitempty"`
+	ActorID     string         `json:"actorId,omitempty"`
 }

@@ -26,6 +26,7 @@ export function EventDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("board");
   const [shareOpen, setShareOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   async function loadEvent() {
     if (!eventId) return;
@@ -52,7 +53,7 @@ export function EventDetailPage() {
   useEffect(() => {
     loadEvent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
+  }, [eventId, refreshKey]);
 
   async function toggleTaskDone(taskId: string) {
     const task = tasks.find((t) => t.id === taskId);
@@ -61,6 +62,7 @@ export function EventDetailPage() {
     try {
       await completeTask({ eventId: event.id, taskId, status: nextStatus });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)));
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to update task. Please try again.");
@@ -80,6 +82,7 @@ export function EventDetailPage() {
         endDay: input.endDay,
       });
       setTasks((prev) => [...prev, created]);
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to create task. Please try again.");
@@ -100,6 +103,7 @@ export function EventDetailPage() {
         endDay: updates.endDay,
       });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to save task. Please try again.");
@@ -111,6 +115,7 @@ export function EventDetailPage() {
     try {
       await apiDeleteTask({ eventId: event.id, taskId });
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to delete task. Please try again.");
@@ -131,6 +136,7 @@ export function EventDetailPage() {
       setIssues((prev) =>
         prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? CURRENT_USER.id : undefined } : i))
       );
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to update issue. Please try again.");
@@ -142,6 +148,7 @@ export function EventDetailPage() {
     try {
       const created = await createIssue({ eventId: event.id, description, severity, raisedBy: CURRENT_USER.id });
       setIssues((prev) => [...prev, created]);
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to flag issue. Please try again.");
@@ -153,6 +160,7 @@ export function EventDetailPage() {
     try {
       await apiEditIssue({ eventId: event.id, issueId, description: updates.description, severity: updates.severity });
       setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)));
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to save issue. Please try again.");
@@ -164,6 +172,7 @@ export function EventDetailPage() {
     try {
       await apiDeleteIssue({ eventId: event.id, issueId });
       setIssues((prev) => prev.filter((i) => i.id !== issueId));
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
       console.error(err);
       alert("Failed to delete issue. Please try again.");
