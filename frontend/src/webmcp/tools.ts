@@ -3,6 +3,11 @@ import { createTask, editTask, completeTask, deleteTask } from "../api-handlers/
 import { createIssue, editIssue, resolveIssue, deleteIssue } from "../api-handlers/issue"
 
 export function registerLooopTools() {
+    if (!document.modelContext) {
+        console.warn('WebMCP not available in this browser context — skipping tool registration.');
+        return;
+    }
+
     //event tools
     document.modelContext.registerTool({
         name: 'create_event',
@@ -12,23 +17,37 @@ export function registerLooopTools() {
             properties: {
                 name: { type: 'string' },
                 type: { type: 'string', enum: ['project', 'party', 'conference', 'household', 'other'] },
-                description: { type: 'string', description: "Short description of event'" },
+                description: { type: 'string', description: "Short description of event" },
                 startDate: { type: 'string', description: 'ISO date, default to current date if none given' },
                 endDate: { type: 'string', description: 'ISO date, omit for ongoing events' },
-
+                members: {
+                    type: 'array',
+                    description: 'Initial members on the board',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'string' },
+                            name: { type: 'string' },
+                            color: { type: 'string' },
+                        },
+                        required: ['id', 'name', 'color'],
+                    },
+                },
+                inviteCode: { type: 'string' },
             },
-            required: ['name', 'type', 'description', 'startDate']
+            required: ['name', 'type', 'description', 'startDate', 'members', 'inviteCode']
         },
         execute: async (input) => createEvent(input)
     })
 
     document.modelContext.registerTool({
         name: 'edit_event',
-        description: 'Edit an event type, or dates.',
+        description: 'Edit an event name, type, description, or dates.',
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
+                name: { type: 'string' },
                 type: { type: 'string' },
                 description: { type: 'string' },
                 startDate: { type: 'string' },
@@ -44,9 +63,7 @@ export function registerLooopTools() {
         description: 'Delete an event.',
         inputSchema: {
             type: 'object',
-            properties: {
-                eventId: { type: 'string' },
-            },
+            properties: { eventId: { type: 'string' } },
             required: ['eventId']
         },
         execute: async (input) => deleteEvent(input)
@@ -64,27 +81,28 @@ export function registerLooopTools() {
                 notes: { type: 'string' },
                 priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
                 assignedTo: { type: 'string', description: 'member id, omit to leave unassigned' },
-                dueDay: { type: 'number' },
-                startDay: { type: 'number' },
-                endDay: { type: 'number' },
+                startDay: { type: 'string', description: 'ISO date. For a single-day task, set startDay and endDay to the same date.' },
+            endDay: { type: 'string', description: 'ISO date. Omit both startDay and endDay for an unscheduled task that shows on every day.' },
             },
-            required: ['eventId', 'title', 'notes', 'priority']
+            required: ['eventId', 'title', 'priority']
         },
         execute: async (input) => createTask(input)
     })
 
     document.modelContext.registerTool({
         name: 'edit_task',
-        description: 'Edit a task — change its priority, assignee, due day, or notes.',
+        description: 'Edit a task — change its title, priority, assignee, due day, or notes.',
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
                 taskId: { type: 'string' },
+                title: { type: 'string' },
                 notes: { type: 'string' },
                 priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
                 assignedTo: { type: 'string' },
-                dueDay: { type: 'number' },
+                startDay: { type: 'string', description: 'ISO date' },
+            endDay: { type: 'string', description: 'ISO date' },
             },
             required: ['eventId', 'taskId']
         },
@@ -104,7 +122,6 @@ export function registerLooopTools() {
             required: ['eventId', 'taskId', 'status'],
         },
         execute: async (input) => completeTask(input)
-
     });
 
     document.modelContext.registerTool({
@@ -113,9 +130,10 @@ export function registerLooopTools() {
         inputSchema: {
             type: 'object',
             properties: {
+                eventId: { type: 'string' },
                 taskId: { type: 'string' },
             },
-            required: ['taskId']
+            required: ['eventId', 'taskId']
         },
         execute: async (input) => deleteTask(input)
     })
@@ -132,7 +150,7 @@ export function registerLooopTools() {
                 severity: { type: 'string', enum: ['low', 'medium', 'high'] },
                 raisedBy: { type: 'string', description: 'member id of who is flagging it' },
             },
-            required: ['eventId', 'description', 'severity']
+            required: ['eventId', 'description', 'severity', 'raisedBy']
         },
         execute: async (input) => createIssue(input)
     })
@@ -155,7 +173,7 @@ export function registerLooopTools() {
 
     document.modelContext.registerTool({
         name: 'resolve_issue',
-        description: 'Mark a issue as done (or reopen it).',
+        description: 'Mark an issue as resolved (or reopen it).',
         inputSchema: {
             type: 'object',
             properties: {
@@ -164,10 +182,9 @@ export function registerLooopTools() {
                 resolved: { type: 'boolean' },
                 resolvedBy: { type: 'string', description: 'member id, required when resolving' },
             },
-            required: ['eventId', 'taskId', 'resolved'],
+            required: ['eventId', 'issueId', 'resolved'],
         },
         execute: async (input) => resolveIssue(input)
-
     });
 
     document.modelContext.registerTool({
@@ -176,9 +193,10 @@ export function registerLooopTools() {
         inputSchema: {
             type: 'object',
             properties: {
+                eventId: { type: 'string' },
                 issueId: { type: 'string' },
             },
-            required: ['issueId']
+            required: ['eventId', 'issueId']
         },
         execute: async (input) => deleteIssue(input)
     })
@@ -186,14 +204,13 @@ export function registerLooopTools() {
     //context and summary
     document.modelContext.registerTool({
         name: 'get_event_summary',
-        description: 'Get a compact status summary for an event: task completion count, open urgent tasks, unresolved issues by severity and a overall health score',
+        description: 'Get a compact status summary for an event: task completion count, open urgent tasks, unresolved issues by severity and an overall health score',
         inputSchema: {
             type: 'object',
-            properties: { 'eventId': { type: 'string' } },
+            properties: { eventId: { type: 'string' } },
             required: ['eventId']
         },
         execute: async (input) => {
-            // pull from your app's current state instead of a dedicated backend endpoint
             const [tasks, issues] = await Promise.all([
                 getTasks(input.eventId),
                 getIssues(input.eventId),
@@ -219,83 +236,42 @@ export function registerLooopTools() {
     })
 
     document.modelContext.registerTool({
-        name: 'generate_starter_tasks',
-        description:
-            "Generate a sensible starter checklist of tasks for a newly created event, based on its type (project, party, household, conference, etc). Call this right after create_event if the user hasn't specified their own tasks, so they don't start from a blank board.",
-        inputSchema: {
-            type: 'object',
-            properties: {
-                eventId: { type: 'string' },
-                tasks: {
-                    type: 'array',
-                    description: 'The list of starter tasks you are proposing, each with a title and priority.',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            title: { type: 'string' },
-                            priority: { type: 'string', enum: ['urgent', 'normal', 'optional'] },
-                        },
-                        required: ['title', 'priority'],
-                    },
-                },
-            },
-            required: ['eventId', 'tasks'],
-        },
-        execute: async (input) => api(`/events/${input.eventId}/tasks/bulk`, 'POST', { tasks: input.tasks }),
-    });
-
-    document.modelContext.registerTool({
-        name: 'get_recent_changes',
-        description: "Get what changed on an event since a given timestamp — use this to catch a user up on what they missed.",
-        inputSchema: {
-            type: 'object',
-            properties: {
-                eventId: { type: 'string' },
-                since: { type: 'string', description: 'ISO timestamp' },
-            },
-            required: ['eventId', 'since'],
-        },
-        execute: async (input) => api(`/events/${input.eventId}/changes?since=${input.since}`, 'GET'),
-    });
-
-    document.modelContext.registerTool({
         name: 'suggest_task_completion',
         description:
-            "Suggest concrete next steps for completing a task, and save that suggestion as notes on the task. Use the task's existing title and notes for context, then propose a clear, actionable suggestion.",
+            "Suggest concrete next steps for completing a task, and save that suggestion on the task. Use the task's existing title and notes for context, then propose a clear, actionable suggestion.",
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
                 taskId: { type: 'string' },
-                suggestion: {
-                    type: 'string',
-                    description: 'Your concrete, actionable suggestion for how to complete this task.',
-                },
+                suggestion: { type: 'string', description: 'Your concrete, actionable suggestion.' },
             },
             required: ['eventId', 'taskId', 'suggestion'],
         },
         execute: async (input) =>
-            api(`/events/${input.eventId}/tasks/${input.taskId}`, 'PATCH', { notes: input.suggestion }),
+            editTask({ eventId: input.eventId, taskId: input.taskId, followUp: [input.suggestion] }),
     });
 
     document.modelContext.registerTool({
         name: 'suggest_issue_resolution',
         description:
-            "Suggest how to resolve a flagged issue, and save that suggestion so anyone viewing the issue can see it. Use the issue's description and severity for context, then propose a clear resolution.",
+            "Suggest how to resolve a flagged issue, and save that suggestion on the issue. Use the issue's description and severity for context.",
         inputSchema: {
             type: 'object',
             properties: {
                 eventId: { type: 'string' },
                 issueId: { type: 'string' },
-                suggestion: {
-                    type: 'string',
-                    description: 'Your concrete, actionable suggestion for how to resolve this issue.',
-                },
+                suggestion: { type: 'string', description: 'Your concrete, actionable suggestion.' },
             },
             required: ['eventId', 'issueId', 'suggestion'],
         },
         execute: async (input) =>
-            api(`/events/${input.eventId}/issues/${input.issueId}`, 'PATCH', { suggestedResolution: input.suggestion }),
+            editIssue({ eventId: input.eventId, issueId: input.issueId, followUp: [input.suggestion] }),
     });
 
+    // NOT REGISTERED — no backend support yet, would throw at runtime:
+    // - generate_starter_tasks: needs a POST /api/events/:id/tasks/bulk handler (doesn't exist)
+    // - get_recent_changes: needs a real activity/history endpoint (doesn't exist — HistoryLog
+    //   is currently mock-only, see note on EventDetailPage below)
+    // Re-add these once those backend pieces exist.
 }

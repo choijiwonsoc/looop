@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createEvent } from '../api-handlers/event';
-import { Member } from '../types';
+import { CURRENT_USER } from '../constants';
 
 const EVENT_TYPES = ['Project', 'Conference', 'Party', 'Household', 'Other'];
 
@@ -13,19 +13,29 @@ export function CreateEventPage() {
   const [isOngoing, setIsOngoing] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: wire to backend — POST /api/events
-    const defaultMember: Member = {
-      id: "1234",
-      name: "Amanda",
-      color: "blue",
+    setSubmitting(true);
+    setError(null);
+    try {
+      await createEvent({
+        name,
+        type,
+        description,
+        startDate,
+        endDate: isOngoing ? undefined : (endDate || undefined),
+        members: [CURRENT_USER],
+        inviteCode: `LOOP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      });
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      setError('Could not create the event. Is the backend running?');
+      setSubmitting(false);
     }
-    const members: Member[] = [defaultMember]
-    const res = await createEvent({ name: name, type: type, description: description, startDate: startDate, members: members, inviteCode: "hello" });
-    console.log(res);
-    navigate('/');
   }
 
   return (
@@ -34,6 +44,8 @@ export function CreateEventPage() {
       <p className="text-ink-soft mb-8 leading-relaxed">
         Give it a name and a rough timeframe. You can invite people and add tasks after.
       </p>
+
+      {error && <p className="text-urgent text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <label className="flex flex-col gap-2">
@@ -106,9 +118,10 @@ export function CreateEventPage() {
 
         <button
           type="submit"
-          className="bg-ink text-bg rounded-lg py-3.5 font-semibold text-base mt-2 hover:bg-loop transition-colors"
+          disabled={submitting}
+          className="bg-ink text-bg rounded-lg py-3.5 font-semibold text-base mt-2 hover:bg-loop transition-colors disabled:opacity-50"
         >
-          Create event
+          {submitting ? 'Creating…' : 'Create event'}
         </button>
       </form>
     </div>

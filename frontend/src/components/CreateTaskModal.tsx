@@ -4,23 +4,33 @@ import type { Member, Priority, Task } from '../types';
 interface CreateTaskModalProps {
   members: Member[];
   initialPriority?: Priority;
+  initialDay?: string; // ISO date — default start/end when creating from a specific day
   dayLabel?: string;
-  editingTask?: Task; // presence = edit mode
+  editingTask?: Task;
   onClose: () => void;
-  onSubmit: (input: { title: string; notes?: string; priority: Priority; assignedTo: string | null }) => void;
+  onSubmit: (input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string; endDay?: string }) => void;
 }
 
-export function CreateTaskModal({ members, initialPriority = 'normal', dayLabel, editingTask, onClose, onSubmit }: CreateTaskModalProps) {
+export function CreateTaskModal({ members, initialPriority = 'normal', initialDay, dayLabel, editingTask, onClose, onSubmit }: CreateTaskModalProps) {
   const isEdit = !!editingTask;
   const [title, setTitle] = useState(editingTask?.title ?? '');
   const [notes, setNotes] = useState(editingTask?.notes ?? '');
   const [priority, setPriority] = useState<Priority>(editingTask?.priority ?? initialPriority);
   const [assignedTo, setAssignedTo] = useState<string>(editingTask?.assignedTo ?? '');
+  const [startDay, setStartDay] = useState<string>(editingTask?.startDay ?? initialDay ?? '');
+  const [endDay, setEndDay] = useState<string>(editingTask?.endDay ?? initialDay ?? '');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    onSubmit({ title: title.trim(), notes: notes.trim() || undefined, priority, assignedTo: assignedTo || null });
+    onSubmit({
+      title: title.trim(),
+      notes: notes.trim() || undefined,
+      priority,
+      assignedTo: assignedTo || null,
+      startDay: startDay || undefined,
+      endDay: endDay || startDay || undefined,
+    });
     onClose();
   }
 
@@ -55,6 +65,28 @@ export function CreateTaskModal({ members, initialPriority = 'normal', dayLabel,
               className="border border-line-strong rounded-lg px-3.5 py-2.5 text-sm bg-white focus:border-loop outline-none resize-none"
             />
           </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs uppercase tracking-wide text-ink-soft">Start day</span>
+              <input
+                type="date"
+                value={startDay}
+                onChange={(e) => setStartDay(e.target.value)}
+                className="border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs uppercase tracking-wide text-ink-soft">End day</span>
+              <input
+                type="date"
+                value={endDay}
+                onChange={(e) => setEndDay(e.target.value)}
+                className="border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
+              />
+            </label>
+          </div>
+          <p className="text-[11px] text-ink-soft -mt-2">Leave both blank for an unscheduled task that shows every day.</p>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-2">

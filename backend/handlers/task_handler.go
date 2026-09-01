@@ -19,6 +19,11 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	task.ID = primitive.NewObjectID()
+	task.Status = models.TaskStatusTodo // always start as todo, ignore any client value
+	task.CreatedAt = time.Now()
+	task.UpdatedAt = time.Now()
+
 	collection := database.DB.Collection("tasks")
 	result, err := collection.InsertOne(
 		context.Background(),
@@ -28,6 +33,7 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -101,6 +107,9 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 
 	// Build the $set doc dynamically — only include fields that were actually sent
 	setFields := bson.M{}
+	if req.Title != nil {
+		setFields["title"] = *req.Title
+	}
 	if req.Notes != nil {
 		setFields["notes"] = *req.Notes
 	}
@@ -110,14 +119,20 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	if req.AssignedTo != nil {
 		setFields["assignedTo"] = *req.AssignedTo
 	}
-	if req.DueDay != nil {
-		setFields["dueDay"] = *req.DueDay
+	if req.StartDay != nil {
+		setFields["startDay"] = *req.StartDay
+	}
+	if req.EndDay != nil {
+		setFields["endDay"] = *req.EndDay
+	}
+	if len(req.FollowUp) > 0 {
+		setFields["followUp"] = req.FollowUp
 	}
 
-	if len(setFields) == 0 {
-		http.Error(w, "No fields to update", http.StatusBadRequest)
-		return
-	}
+	// if len(setFields) == 0 {
+	// 	http.Error(w, "No fields to update", http.StatusBadRequest)
+	// 	return
+	// }
 
 	collection := database.DB.Collection("tasks")
 	result, err := collection.UpdateOne(

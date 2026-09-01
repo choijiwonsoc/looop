@@ -4,6 +4,7 @@ import { Avatar } from './Avatar';
 import { LoopRing } from './LoopRing';
 import { Card } from './Card';
 import { EditIcon, TrashIcon } from './icons';
+import { formatTaskDateRange } from '../utils/dates';
 
 interface TaskCardProps {
   task: Task;
@@ -11,11 +12,11 @@ interface TaskCardProps {
   onToggleDone: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onComplete: ()=> void;
 }
 
-export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete, onComplete }: TaskCardProps) {
+export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete }: TaskCardProps) {
   const done = task.status === 'done';
+  const dateLabel = formatTaskDateRange(task.startDay, task.endDay);
   return (
     <Card className={`relative group ${done ? 'opacity-55' : ''}`}>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -33,14 +34,19 @@ export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete, onCom
       </div>
       <div className="flex items-center gap-2 pl-[30px] mt-3">
         <PriorityBadge priority={task.priority} />
-        {task.dueDay != null && <span className="text-[11px] text-ink-soft">Day {task.dueDay}</span>}
+        {dateLabel && <span className="text-[11px] text-ink-soft">{dateLabel}</span>}
         <div className="flex-1" />
         <Avatar member={assignee} size={22} />
       </div>
-      <div className="flex items-center gap-2 pl-[30px] mt-3">
-        <button onClick={onComplete}>
-          Mark Complete
-          </button>
+      <div className="pl-[30px] mt-2">
+        <button
+          onClick={onToggleDone}
+          className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
+            done ? 'text-ink-soft hover:bg-line' : 'text-optional bg-optional-soft hover:bg-optional/20'
+          }`}
+        >
+          {done ? 'Reopen' : 'Mark complete'}
+        </button>
       </div>
     </Card>
   );

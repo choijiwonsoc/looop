@@ -2,8 +2,8 @@ import { EventBoard, Task, Issue, IssueSeverity, TaskStatus, Member } from "../t
 import { API_BASE_URL } from "../api";
 
 
-export async function getIssues(): Promise<Issue[]> {
-  const response = await fetch(`${API_BASE_URL}/get-issues`);
+export async function getAllIssuesRaw(): Promise<Issue[]> {
+  const response = await fetch(`${API_BASE_URL}/api/issues`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch events ${response.status}`);
@@ -17,19 +17,14 @@ export async function createIssue(input: {
   eventId: string;
   description: string;
   severity: IssueSeverity;
-  raisedBy: String;
-}): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/issues`, {
+  raisedBy: string;
+}): Promise<Issue> {
+  const response = await fetch(`${API_BASE_URL}/api/issues`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      eventId: input.eventId,
-      description: input.description,
-      severity: input.severity,
-      raisedBy: input.raisedBy,
-    })
+    body: JSON.stringify(input)
   });
 
   if (!response.ok) {
@@ -47,7 +42,7 @@ export async function resolveIssue(input: {
   resolvedBy?: string;
   followUp?: string[];
 }): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/events/${input.eventId}/issues/${input.issueId}/status`, {
+  const response = await fetch(`${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json"
@@ -72,15 +67,17 @@ export async function editIssue(input: {
   issueId: string;
   description?: string;
   severity?: IssueSeverity;
+  followUp?: string[];
 }): Promise<Issue> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}/issues/${input.issueId}`,
+    `${API_BASE_URL}/events/${input.eventId}/api/issues/${input.issueId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         description: input.description,
         severity: input.severity,
+        followUp: input.followUp,
       }),
     }
   );
@@ -93,7 +90,7 @@ export async function deleteIssue(input: {
   issueId: string;
 }): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}/issues/${input.issueId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}`,
     {
       method: "DELETE",
     }

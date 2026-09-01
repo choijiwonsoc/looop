@@ -19,6 +19,9 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	event.ID = primitive.NewObjectID()
+	event.CreatedAt = time.Now()
+
 	collection := database.DB.Collection("events")
 	result, err := collection.InsertOne(
 		context.Background(),
@@ -28,6 +31,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -67,6 +71,9 @@ func EditEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Build the $set doc dynamically — only include fields that were actually sent
 	setFields := bson.M{}
+	if req.Name != nil {
+		setFields["name"] = *req.Name
+	}
 	if req.Type != nil {
 		setFields["type"] = *req.Type
 	}
@@ -80,10 +87,10 @@ func EditEvent(w http.ResponseWriter, r *http.Request) {
 		setFields["endDate"] = *req.EndDate
 	}
 
-	if len(setFields) == 0 {
-		http.Error(w, "No fields to update", http.StatusBadRequest)
-		return
-	}
+	// if len(setFields) == 0 {
+	// 	http.Error(w, "No fields to update", http.StatusBadRequest)
+	// 	return
+	// }
 
 	collection := database.DB.Collection("events")
 	result, err := collection.UpdateOne(

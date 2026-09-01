@@ -1,14 +1,18 @@
-interface Document {
-  modelContext: ModelContext;
+export {};
+
+interface ModelContextTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  execute: (input: any) => Promise<unknown>;
 }
 
 interface ModelContext {
-  registerTool(tool: {
-    name: string;
-    description: string;
-    inputSchema: Record<string, unknown>;
-    execute: (input: any) => Promise<any>;
-  }): Promise<void>;
+  registerTool: (tool: ModelContextTool) => void;
+}
 
-  unregisterTool?(name: string): Promise<void>;
+declare global {
+  interface Document {
+    modelContext: ModelContext;
+  }
 }

@@ -43,11 +43,11 @@ export const mockEvents: EventBoard[] = [
 ];
 
 export const mockTasks: Task[] = [
-  { id: 't1', eventId: 'e1', title: 'Confirm caterer headcount', priority: 'urgent', status: 'in_progress', assignedTo: 'm2', dueDay: 1, createdAt: '', updatedAt: '' },
-  { id: 't2', eventId: 'e1', title: 'Pick up flowers', priority: 'urgent', status: 'todo', assignedTo: 'm3', dueDay: 2, createdAt: '', updatedAt: '' },
-  { id: 't3', eventId: 'e1', title: 'Print seating chart', priority: 'normal', status: 'todo', assignedTo: null, dueDay: 1, createdAt: '', updatedAt: '' },
-  { id: 't4', eventId: 'e1', title: 'Book after-party venue', priority: 'optional', status: 'done', assignedTo: 'm1', dueDay: 1, createdAt: '', updatedAt: '' },
-  { id: 't5', eventId: 'e1', title: 'Test microphones', priority: 'normal', status: 'done', assignedTo: 'm4', dueDay: 1, createdAt: '', updatedAt: '' },
+  { id: 't1', eventId: 'e1', title: 'Confirm caterer headcount', priority: 'urgent', status: 'in_progress', assignedTo: 'm2', startDay: '2026-10-02', endDay: '2026-10-02', createdAt: '', updatedAt: '' },
+  { id: 't2', eventId: 'e1', title: 'Pick up flowers', priority: 'urgent', status: 'todo', assignedTo: 'm3', startDay: '2026-10-03', endDay: '2026-10-03', createdAt: '', updatedAt: '' },
+  { id: 't3', eventId: 'e1', title: 'Print seating chart', priority: 'normal', status: 'todo', assignedTo: null, startDay: '2026-10-02', endDay: '2026-10-02', createdAt: '', updatedAt: '' },
+  { id: 't4', eventId: 'e1', title: 'Book after-party venue', priority: 'optional', status: 'done', assignedTo: 'm1', startDay: '2026-10-02', endDay: '2026-10-02', createdAt: '', updatedAt: '' },
+  { id: 't5', eventId: 'e1', title: 'Test microphones', priority: 'normal', status: 'done', assignedTo: 'm4', startDay: '2026-10-02', endDay: '2026-10-02', createdAt: '', updatedAt: '' },
   { id: 't6', eventId: 'e2', title: 'Buy milk', priority: 'normal', status: 'todo', assignedTo: 'm1', createdAt: '', updatedAt: '' },
   { id: 't7', eventId: 'e2', title: 'Take out trash', priority: 'urgent', status: 'todo', assignedTo: 'm3', createdAt: '', updatedAt: '' },
 ];

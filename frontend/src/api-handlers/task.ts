@@ -2,8 +2,8 @@ import { EventBoard, Task, Issue, IssueSeverity, TaskStatus, Member, Priority } 
 import { API_BASE_URL } from "../api";
 
 
-export async function getTasks(): Promise<Task[]>{
-    const response = await fetch(`${API_BASE_URL}/get-tasks`);
+export async function getAllTasksRaw(): Promise<Task[]>{
+    const response = await fetch(`${API_BASE_URL}/api/tasks`);
 
     if(!response.ok){
         throw new Error(`Failed to fetch events ${response.status}`);
@@ -16,35 +16,21 @@ export async function getTasks(): Promise<Task[]>{
 export async function createTask(input:{
     eventId: string;
     title: string;
-    notes: string;
+    notes?: string;
     priority: Priority;
-    status: TaskStatus;
-    assignedTo: string;
-    dueDay: number;
-    startDay: number,
-    endDay: number,
-    createdAt: string;
-    updatedAt: string;
-    followUp?: string[];
+    assignedTo?: string;
+    startDay?: string,
+    endDay?: string,
 
-}): Promise<void>{
-    const response = await fetch(`${API_BASE_URL}/tasks`, {
+}): Promise<Task>{
+    const response = await fetch(`${API_BASE_URL}/api/tasks`, {
         method: "POST",
         headers:{
             "Content-Type": "application/json"
         }, 
-        body: JSON.stringify({
-            eventId: input.eventId,
-            title: input.title,
-            notes: input.notes,
-            priority: input.priority,
-            status: input.status,
-            assignedTo: input.assignedTo,
-            dueDay: input.dueDay,
-            createdAt: input.createdAt,
-            updatedAt: input.updatedAt,
-            followUp: input.followUp,
-        })
+        body: JSON.stringify(
+          input
+        )
     });
 
     if(!response.ok){
@@ -62,7 +48,7 @@ export async function completeTask(input:{
     status: TaskStatus;
     followUp?: string[],
 }): Promise<void>{
-    const response = await fetch(`${API_BASE_URL}/events/${input.eventId}/tasks/${input.taskId}/status`, {
+    const response = await fetch(`${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}/status`, {
         method: "PATCH",
         headers:{
             "Content-Type": "application/json"
@@ -84,21 +70,27 @@ export async function completeTask(input:{
 export async function editTask(input: {
   eventId: string;
   taskId: string;
+  title?: string;
   notes?: string;
   priority?: Priority;
   assignedTo?: string;
-  dueDay?: number;
+  startDay?: string,
+  endDay?: string,
+  followUp?: string[];
 }): Promise<Task> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}/tasks/${input.taskId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        title: input.title,
         notes: input.notes,
         priority: input.priority,
         assignedTo: input.assignedTo,
-        dueDay: input.dueDay,
+        startDay: input.startDay,
+        endDay: input.endDay,
+        followUp: input.followUp,
       }),
     }
   );
@@ -111,7 +103,7 @@ export async function deleteTask(input: {
   taskId: string;
 }): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}/tasks/${input.taskId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}`,
     {
       method: "DELETE",
     }

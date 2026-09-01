@@ -19,6 +19,10 @@ func CreateIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	issue.ID = primitive.NewObjectID()
+	issue.Resolved = false // always start unresolved, ignore any client value
+	issue.CreatedAt = time.Now()
 	collection := database.DB.Collection("issues")
 	result, err := collection.InsertOne(
 		context.Background(),
@@ -28,6 +32,7 @@ func CreateIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -111,11 +116,14 @@ func EditIssue(w http.ResponseWriter, r *http.Request) {
 	if req.Severity != nil {
 		setFields["severity"] = *req.Severity
 	}
-
-	if len(setFields) == 0 {
-		http.Error(w, "No fields to update", http.StatusBadRequest)
-		return
+	if len(req.FollowUp) > 0 {
+		setFields["followUp"] = req.FollowUp
 	}
+
+	// if len(setFields) == 0 {
+	// 	http.Error(w, "No fields to update", http.StatusBadRequest)
+	// 	return
+	// }
 
 	collection := database.DB.Collection("issues")
 	result, err := collection.UpdateOne(

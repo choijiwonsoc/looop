@@ -1,11 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { mockEvents, mockTasks, mockIssues, mockHistory, currentUserId } from "../data/mockData";
-import type { Task, Issue, Priority, IssueSeverity } from "../types";
+import { getEvents, getTasks, getIssues } from "../api-handlers/event";
+import { createTask, editTask as apiEditTask, completeTask, deleteTask as apiDeleteTask } from "../api-handlers/task";
+import { createIssue, editIssue as apiEditIssue, resolveIssue, deleteIssue as apiDeleteIssue } from "../api-handlers/issue";
+import type { EventBoard, Task, Issue, Priority, IssueSeverity } from "../types";
 import { DayBoardTab } from "../components/DayBoardTab";
 import { ActivityTab } from "../components/ActivityTab";
 import { Avatar } from "../components/Avatar";
 import { ShareLinkModal } from "../components/ShareLinkModal";
+import { CURRENT_USER } from "../constants";
 
 type Tab = "board" | "activity";
 
@@ -16,77 +19,169 @@ const TABS: { key: Tab; label: string }[] = [
 
 export function EventDetailPage() {
   const { eventId } = useParams();
-  const event = mockEvents.find((e) => e.id === eventId);
-
-  const [tasks, setTasks] = useState<Task[]>(mockTasks.filter((t) => t.eventId === eventId));
-  const [issues, setIssues] = useState<Issue[]>(mockIssues.filter((i) => i.eventId === eventId));
-  const history = useMemo(() => mockHistory.filter((h) => h.eventId === eventId), [eventId]);
-
+  const [event, setEvent] = useState<EventBoard | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("board");
   const [shareOpen, setShareOpen] = useState(false);
 
-  if (!event) {
-    return <div className="p-16 text-center text-ink-soft">Event not found.</div>;
+  async function loadEvent() {
+    if (!eventId) return;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      // No single-event GET endpoint yet — fetch the list and find this one.
+      const events = await getEvents();
+      const found = events.find((e) => e.id === eventId) ?? null;
+      setEvent(found);
+      if (found) {
+        const [taskData, issueData] = await Promise.all([getTasks(eventId), getIssues(eventId)]);
+        setTasks(taskData);
+        setIssues(issueData);
+      }
+    } catch (err) {
+      console.error(err);
+      setLoadError("Could not load this event. Is the backend running?");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function toggleTaskDone(taskId: string) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: t.status === "done" ? "todo" : "done" } : t))
+  useEffect(() => {
+    loadEvent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId]);
+
+  async function toggleTaskDone(taskId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !event) return;
+    const nextStatus = task.status === "done" ? "todo" : "done";
+    try {
+      await completeTask({ eventId: event.id, taskId, status: nextStatus });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update task. Please try again.");
+    }
+  }
+
+  async function addTask(input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string, endDay?: string }) {
+    if (!event) return;
+    try {
+      const created = await createTask({
+        eventId: event.id,
+        title: input.title,
+        notes: input.notes,
+        priority: input.priority,
+        assignedTo: input.assignedTo ?? undefined,
+        startDay: input.startDay,
+        endDay: input.endDay,
+      });
+      setTasks((prev) => [...prev, created]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create task. Please try again.");
+    }
+  }
+
+  async function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null, startDay?: string, endDay?: string}) {
+    if (!event) return;
+    try {
+      await apiEditTask({
+        eventId: event.id,
+        taskId,
+        title: updates.title,
+        notes: updates.notes,
+        priority: updates.priority,
+        assignedTo: updates.assignedTo ?? undefined,
+        startDay: updates.startDay,
+        endDay: updates.endDay,
+      });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save task. Please try again.");
+    }
+  }
+
+  async function deleteTask(taskId: string) {
+    if (!event) return;
+    try {
+      await apiDeleteTask({ eventId: event.id, taskId });
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete task. Please try again.");
+    }
+  }
+
+  async function toggleIssueResolved(issueId: string) {
+    const issue = issues.find((i) => i.id === issueId);
+    if (!issue || !event) return;
+    const nextResolved = !issue.resolved;
+    try {
+      await resolveIssue({
+        eventId: event.id,
+        issueId,
+        resolved: nextResolved,
+        resolvedBy: nextResolved ? CURRENT_USER.id : undefined,
+      });
+      setIssues((prev) =>
+        prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? CURRENT_USER.id : undefined } : i))
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update issue. Please try again.");
+    }
+  }
+
+  async function addIssue(description: string, severity: IssueSeverity) {
+    if (!event) return;
+    try {
+      const created = await createIssue({ eventId: event.id, description, severity, raisedBy: CURRENT_USER.id });
+      setIssues((prev) => [...prev, created]);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to flag issue. Please try again.");
+    }
+  }
+
+  async function editIssue(issueId: string, updates: { description: string; severity: IssueSeverity }) {
+    if (!event) return;
+    try {
+      await apiEditIssue({ eventId: event.id, issueId, description: updates.description, severity: updates.severity });
+      setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save issue. Please try again.");
+    }
+  }
+
+  async function deleteIssue(issueId: string) {
+    if (!event) return;
+    try {
+      await apiDeleteIssue({ eventId: event.id, issueId });
+      setIssues((prev) => prev.filter((i) => i.id !== issueId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete issue. Please try again.");
+    }
+  }
+
+  if (loading) return <div className="p-16 text-center text-ink-soft">Loading event…</div>;
+
+  if (loadError) {
+    return (
+      <div className="p-16 text-center">
+        <p className="text-urgent text-sm mb-3">{loadError}</p>
+        <button onClick={loadEvent} className="text-loop text-sm font-medium">Try again</button>
+      </div>
     );
   }
 
-  function addTask(input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; day: number }) {
-    const newTask: Task = {
-      id: `t-${Date.now()}`,
-      eventId: event!.id,
-      title: input.title,
-      notes: input.notes,
-      priority: input.priority,
-      status: "todo",
-      assignedTo: input.assignedTo,
-      dueDay: input.day,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setTasks((prev) => [...prev, newTask]);
-  }
-
-  function toggleIssueResolved(issueId: string) {
-    setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, resolved: !i.resolved } : i)));
-  }
-
-  function addIssue(description: string, severity: IssueSeverity) {
-    const newIssue: Issue = {
-      id: `i-${Date.now()}`,
-      eventId: event!.id,
-      description,
-      severity,
-      resolved: false,
-      raisedBy: currentUserId,
-      createdAt: new Date().toISOString(),
-    };
-    setIssues((prev) => [...prev, newIssue]);
-  }
-  function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null }) {
-  setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t)));
-  //editTask(??)
-}
-
-function completeTask(taskId: string) {
-  setTasks((prev) => prev.filter((t) => t.id !== taskId));
-}
-
-function deleteTask(taskId: string) {
-  setTasks((prev) => prev.filter((t) => t.id !== taskId));
-}
-
-function editIssue(issueId: string, updates: { description: string; severity: IssueSeverity }) {
-  setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)));
-}
-
-function deleteIssue(issueId: string) {
-  setIssues((prev) => prev.filter((i) => i.id !== issueId));
-}
+  if (!event) return <div className="p-16 text-center text-ink-soft">Event not found.</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-6 sm:px-10 py-10 sm:py-12">
@@ -121,10 +216,9 @@ function deleteIssue(issueId: string) {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-3 px-4 rounded-xl text-center whitespace-nowrap transition-all duration-200 ${activeTab === tab.key
-                ? "bg-white/10 backdrop-blur-md border border-white/20 shadow-lg text-ink font-semibold"
-                : "text-ink-soft hover:bg-white/5 hover:text-ink"
-              }`}
+            className={`px-4 py-3 text-sm border-b-2 -mb-px whitespace-nowrap transition-colors ${
+              activeTab === tab.key ? "text-ink border-loop font-semibold" : "text-ink-soft border-transparent hover:text-ink"
+            }`}
           >
             {tab.label}
           </button>
@@ -133,29 +227,28 @@ function deleteIssue(issueId: string) {
 
       <div>
         {activeTab === "board" && (
-  <DayBoardTab
-    event={event}
-    tasks={tasks}
-    currentUserId={currentUserId}
-    onToggleTaskDone={toggleTaskDone}
-    onAddTask={addTask}
-    onEditTask={editTask}
-    onDeleteTask={deleteTask}
-    onCompleteTask={completeTask}
-  />
-)}
-{activeTab === "activity" && (
-  <ActivityTab
-    issues={issues}
-    tasks={tasks}
-    members={event.members}
-    history={history}
-    onToggleResolved={toggleIssueResolved}
-    onAddIssue={addIssue}
-    onEditIssue={editIssue}
-    onDeleteIssue={deleteIssue}
-  />
-)}
+          <DayBoardTab
+            event={event}
+            tasks={tasks}
+            currentUserId={CURRENT_USER.id}
+            onToggleTaskDone={toggleTaskDone}
+            onAddTask={addTask}
+            onEditTask={editTask}
+            onDeleteTask={deleteTask}
+          />
+        )}
+        {activeTab === "activity" && (
+          <ActivityTab
+            issues={issues}
+            tasks={tasks}
+            members={event.members}
+            history={[]}
+            onToggleResolved={toggleIssueResolved}
+            onAddIssue={addIssue}
+            onEditIssue={editIssue}
+            onDeleteIssue={deleteIssue}
+          />
+        )}
       </div>
 
       {shareOpen && <ShareLinkModal inviteCode={event.inviteCode} onClose={() => setShareOpen(false)} />}

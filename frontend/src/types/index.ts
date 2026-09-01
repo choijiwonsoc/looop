@@ -27,9 +27,8 @@ export interface Task {
   priority: Priority;
   status: TaskStatus;
   assignedTo: string | null; // member id
-  dueDay?: number;
-  startDay?: number;    // multi-day tasks: first day (inclusive)
-  endDay?: number; 
+  startDay?: string;    // multi-day tasks: first day (inclusive)
+  endDay?: string; 
   createdAt: string;
   updatedAt: string;
   followUp?: string[];

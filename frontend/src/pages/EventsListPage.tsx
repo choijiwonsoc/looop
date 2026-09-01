@@ -1,29 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { mockEvents, mockTasks, mockIssues } from '../data/mockData';
+import { getEvents, editEvent, deleteEvent, getTasks, getIssues } from '../api-handlers/event';
 import { EventCard } from '../components/EventCard';
 import { EditEventModal } from '../components/EditEventModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { computeHealth } from '../utils/health';
 import type { EventBoard } from '../types';
 
+interface EnrichedEvent {
+  event: EventBoard;
+  health: number;
+  urgentOpen: number;
+  issuesOpen: number;
+}
+
 export function EventsListPage() {
-  const [events, setEvents] = useState<EventBoard[]>(mockEvents);
+  const [enriched, setEnriched] = useState<EnrichedEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<EventBoard | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<EventBoard | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
-  const enriched = events.map((event) => {
-    const tasks = mockTasks.filter((t) => t.eventId === event.id);
-    const issues = mockIssues.filter((i) => i.eventId === event.id);
-    return {
-      event,
-      health: computeHealth(tasks, issues),
-      urgentOpen: tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length,
-      issuesOpen: issues.filter((i) => !i.resolved).length,
-    };
-  });
+  async function loadEvents() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const events = await getEvents();
+      const withStats = await Promise.all(
+        events.map(async (event) => {
+          const [tasks, issues] = await Promise.all([getTasks(event.id), getIssues(event.id)]);
+          return {
+            event,
+            health: computeHealth(tasks, issues),
+            urgentOpen: tasks.filter((t) => t.priority === 'urgent' && t.status !== 'done').length,
+            issuesOpen: issues.filter((i) => !i.resolved).length,
+          };
+        })
+      );
+      setEnriched(withStats);
+    } catch (err) {
+      console.error(err);
+      setLoadError('Could not load events. Is the backend running?');
+    } finally {
+      setLoading(false);
+    }
+  }
 
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const events = enriched.map((e) => e.event);
   const types = Array.from(new Set(events.map((e) => e.type).filter(Boolean))) as string[];
   const filtered = typeFilter ? enriched.filter((e) => e.event.type === typeFilter) : enriched;
   const sorted = [...filtered].sort((a, b) => a.health - b.health);
@@ -32,22 +60,55 @@ export function EventsListPage() {
   const totalUrgent = enriched.reduce((sum, e) => sum + e.urgentOpen, 0);
   const totalIssues = enriched.reduce((sum, e) => sum + e.issuesOpen, 0);
 
-  function saveEventEdit(updates: Partial<EventBoard>) {
+  async function saveEventEdit(updates: Partial<EventBoard>) {
     if (!editingEvent) return;
-    setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? { ...e, ...updates } : e)));
-    // TODO: call editEvent() API
+    try {
+      await editEvent({
+        eventId: editingEvent.id,
+        name: updates.name,
+        type: updates.type,
+        description: updates.description,
+        startDate: updates.startDate,
+        // Note: switching a dated event to "ongoing" via edit isn't fully wired —
+        // clearing endDate server-side needs an explicit-null vs omitted distinction
+        // that's a bigger change. Create a new event for that case for now.
+        endDate: updates.endDate ?? undefined,
+      });
+      setEditingEvent(null);
+      await loadEvents();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save changes. Please try again.');
+    }
   }
 
-  function confirmDeleteEvent() {
+  async function confirmDeleteEvent() {
     if (!deletingEvent) return;
-    setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
-    setDeletingEvent(null);
-    // TODO: call deleteEvent() API
+    try {
+      await deleteEvent({ eventId: deletingEvent.id });
+      setDeletingEvent(null);
+      await loadEvents();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete event. Please try again.');
+    }
+  }
+
+  if (loading) {
+    return <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16 text-center text-ink-soft">Loading events…</div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16 text-center">
+        <p className="text-urgent text-sm mb-3">{loadError}</p>
+        <button onClick={loadEvents} className="text-loop text-sm font-medium">Try again</button>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-6xl mx-auto px-6 sm:px-10 py-8 sm:py-10">
-      {/* compact header */}
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
         <div>
           <p className="text-xs uppercase tracking-wide text-ink-soft mb-1">Dashboard</p>
@@ -61,7 +122,6 @@ export function EventsListPage() {
         </Link>
       </div>
 
-      {/* overview stats */}
       <div className="flex items-stretch bg-white border border-line rounded-xl overflow-hidden mb-6">
         {[
           { value: events.length, label: 'Total events', tone: 'text-ink' },
@@ -76,7 +136,6 @@ export function EventsListPage() {
         ))}
       </div>
 
-      {/* filter chips */}
       {types.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -101,7 +160,6 @@ export function EventsListPage() {
         </div>
       )}
 
-      {/* grid */}
       {sorted.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-ink-soft text-sm mb-4">No boards yet.</p>

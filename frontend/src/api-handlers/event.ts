@@ -2,7 +2,7 @@ import { EventBoard, Task, Issue, IssueSeverity, TaskStatus, Member } from "../t
 import { API_BASE_URL } from "../api";
 
 export async function getEvents(): Promise<EventBoard[]>{
-    const response = await fetch(`${API_BASE_URL}/get-events`);
+    const response = await fetch(`${API_BASE_URL}/api/events`);
 
     if(!response.ok){
         throw new Error(`Failed to fetch events ${response.status}`);
@@ -21,7 +21,7 @@ export async function createEvent(input:{
     members: Member[];
     inviteCode: string;
 }): Promise<void>{
-    const response = await fetch(`${API_BASE_URL}/events`, {
+    const response = await fetch(`${API_BASE_URL}/api/events`, {
         method: "POST",
         headers:{
             "Content-Type": "application/json"
@@ -48,17 +48,19 @@ export async function createEvent(input:{
 
 export async function editEvent(input: {
   eventId: string;
-  type: string;
+  name?: string;
+  type?: string;
   description?: string;
   startDate?: string;
   endDate?: string;
-}): Promise<Event> {
+}): Promise<EventBoard> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        name: input.name,
         type: input.type,
         description: input.description,
         startDate: input.startDate,
@@ -75,7 +77,7 @@ export async function deleteEvent(input: {
   eventId: string;
 }): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/events/${input.eventId}`,
+    `${API_BASE_URL}/api/events/${input.eventId}`,
     {
       method: "DELETE",
     }
@@ -88,13 +90,13 @@ export async function deleteEvent(input: {
 }
 
 export async function getTasks(eventId: string): Promise<Task[]> {
-  const response = await fetch(`${API_BASE_URL}/events/${eventId}/tasks`);
+  const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/tasks`);
   if (!response.ok) throw new Error(`Failed to fetch tasks ${response.status}`);
   return response.json();
 }
 
 export async function getIssues(eventId: string): Promise<Issue[]> {
-  const response = await fetch(`${API_BASE_URL}/events/${eventId}/issues`);
+  const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/issues`);
   if (!response.ok) throw new Error(`Failed to fetch issues ${response.status}`);
   return response.json();
 }

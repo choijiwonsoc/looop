@@ -84,7 +84,8 @@ type Task struct {
 	Priority    Priority           `bson:"priority" json:"priority"`
 	Status      TaskStatus         `bson:"status" json:"status"`
 	AssignedTo  *string            `bson:"assignedTo,omitempty" json:"assignedTo,omitempty"` // member id
-	DueDay      *int               `bson:"dueDay,omitempty" json:"dueDay,omitempty"`
+	StartDay   *string            `bson:"startDay,omitempty" json:"startDay,omitempty"`
+	EndDay     *string            `bson:"endDay,omitempty" json:"endDay,omitempty"`
 	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
 	FollowUp   []string           `bson:"followUp,omitempty" json:"followUp,omitempty"`
@@ -132,6 +133,7 @@ type HistoryEntry struct {
 }
 
 type EditEventRequest struct {
+	Name *string        `json:"type,omitempty"`
 	Type *string        `json:"type,omitempty"`
 	Description    *string `json:"description,omitempty"`
 	StartDate *string        `json:"startDate,omitempty"`
@@ -144,14 +146,16 @@ type CompleteTaskRequest struct {
 }
 
 type EditTaskRequest struct {
+	Title *string        `json:"description,omitempty"`
 	Notes *string        `json:"description,omitempty"`
 	Priority    *Priority `json:"priority,omitempty"`
 	AssignedTo *string        `json:"assignedTo,omitempty"`
 	DueDay *int        `json:"dueDay,omitempty"`
+	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
 
 type ResolveIssueRequest struct {
-	Resolved string `bson:"resolved" json:"resolved"`
+	Resolved bool `bson:"resolved" json:"resolved"`
 	ResolvedBy string `bson:"resolvedBy,omitempty" json:"resolvedBy,omitempty"`
 	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
@@ -159,4 +163,5 @@ type ResolveIssueRequest struct {
 type EditIssueRequest struct {
 	Description *string        `json:"description,omitempty"`
 	Severity    *IssueSeverity `json:"severity,omitempty"`
+	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }

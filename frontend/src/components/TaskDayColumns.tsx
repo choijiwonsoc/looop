@@ -9,7 +9,6 @@ interface TaskDayColumnsProps {
   onAddTaskForPriority: (priority: Priority) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
-  onCompleteTask: (task: Task) => void;
 }
 
 const COLUMNS: { key: Priority; label: string; border: string; text: string }[] = [
@@ -18,7 +17,7 @@ const COLUMNS: { key: Priority; label: string; border: string; text: string }[] 
   { key: 'optional', label: 'Optional', border: 'border-optional', text: 'text-optional' },
 ];
 
-export function TaskDayColumns({ tasks, members, currentUserId, onToggleTaskDone, onAddTaskForPriority, onEditTask, onDeleteTask, onCompleteTask }: TaskDayColumnsProps) {
+export function TaskDayColumns({ tasks, members, currentUserId, onToggleTaskDone, onAddTaskForPriority, onEditTask, onDeleteTask }: TaskDayColumnsProps) {
   const memberById = Object.fromEntries(members.map((m) => [m.id, m]));
 
   return (
@@ -37,7 +36,6 @@ export function TaskDayColumns({ tasks, members, currentUserId, onToggleTaskDone
             onToggleDone={() => onToggleTaskDone(task.id)}
             onEdit={() => onEditTask(task)}
             onDelete={() => onDeleteTask(task)}
-            onComplete={()=> onCompleteTask(task)}
           />
         );
 
