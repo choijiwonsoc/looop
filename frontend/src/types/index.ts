@@ -56,10 +56,14 @@ export interface TimelineItem {
 
 export type HistoryAction =
   | 'task_created'
+  | 'task_edited'
   | 'task_completed'
   | 'task_status_changed'
+  | 'task_deleted'
   | 'issue_flagged'
+  | 'issue_edited'
   | 'issue_resolved'
+  | 'issue_deleted'
   | 'member_joined'
   | 'timeline_item_added';
 

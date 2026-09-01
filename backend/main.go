@@ -61,6 +61,8 @@ func main() {
 	r.Patch("/api/events/{eventId}/issues/{id}", handlers.EditIssue)
 	r.Delete("/api/events/{eventId}/issues/{id}", handlers.DeleteIssue)
 
+	r.Get("/api/events/{eventId}/history", handlers.GetHistory)
+
 	log.Println("Server running on :8080")
 	http.ListenAndServe(":8080", r)
 }

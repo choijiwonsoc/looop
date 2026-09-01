@@ -33,6 +33,7 @@ func CreateIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	logHistory(issue.EventID, issue.RaisedBy, models.ActionIssueFlagged, issue.Description)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
@@ -56,6 +57,14 @@ func GetAllIssues(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(issues)
 }
+func getIssueRef(objectID primitive.ObjectID) (eventID primitive.ObjectID, description string, ok bool) {
+	var issue models.Issue
+	err := database.DB.Collection("issues").FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&issue)
+	if err != nil {
+		return primitive.NilObjectID, "", false
+	}
+	return issue.EventID, issue.Description, true
+}
 
 func ResolveIssue(w http.ResponseWriter, r *http.Request) {
 	issueID := chi.URLParam(r, "id")
@@ -70,6 +79,7 @@ func ResolveIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	eventID, description, ok := getIssueRef(objectID)
 	collection := database.DB.Collection("issues")
 	result, err := collection.UpdateOne(
 		context.Background(),
@@ -87,6 +97,13 @@ func ResolveIssue(w http.ResponseWriter, r *http.Request) {
 	if result.MatchedCount == 0 {
 		http.Error(w, "issue not found", http.StatusNotFound)
 		return
+	}
+	if ok {
+		action := models.ActionIssueEdited
+		if req.Resolved {
+			action = models.ActionIssueResolved
+		}
+		logHistory(eventID, req.ResolvedBy, action, description)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -125,6 +142,7 @@ func EditIssue(w http.ResponseWriter, r *http.Request) {
 	// 	http.Error(w, "No fields to update", http.StatusBadRequest)
 	// 	return
 	// }
+	eventID, existingDescription, ok := getIssueRef(objectID)
 
 	collection := database.DB.Collection("issues")
 	result, err := collection.UpdateOne(
@@ -139,6 +157,13 @@ func EditIssue(w http.ResponseWriter, r *http.Request) {
 	if result.MatchedCount == 0 {
 		http.Error(w, "issue not found", http.StatusNotFound)
 		return
+	}
+	if ok {
+		label := existingDescription
+		if req.Description != nil {
+			label = *req.Description
+		}
+		logHistory(eventID, req.ActorID, models.ActionIssueEdited, label)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -155,6 +180,9 @@ func DeleteIssue(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid issue ID", http.StatusBadRequest)
 		return
 	}
+	actorID := r.URL.Query().Get("actorId")
+
+	eventID, description, ok := getIssueRef(objectID)
 
 	collection := database.DB.Collection("issues")
 	result, err := collection.DeleteOne(
@@ -168,6 +196,9 @@ func DeleteIssue(w http.ResponseWriter, r *http.Request) {
 	if result.DeletedCount == 0 {
 		http.Error(w, "issue not found", http.StatusNotFound)
 		return
+	}
+	if ok {
+		logHistory(eventID, actorID, models.ActionIssueDeleted, description)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

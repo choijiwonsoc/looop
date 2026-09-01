@@ -3,12 +3,13 @@ import { useParams } from "react-router-dom";
 import { getEvents, getTasks, getIssues } from "../api-handlers/event";
 import { createTask, editTask as apiEditTask, completeTask, deleteTask as apiDeleteTask } from "../api-handlers/task";
 import { createIssue, editIssue as apiEditIssue, resolveIssue, deleteIssue as apiDeleteIssue } from "../api-handlers/issue";
-import type { EventBoard, Task, Issue, Priority, IssueSeverity } from "../types";
+import type { EventBoard, Task, Issue, Priority, IssueSeverity, HistoryEntry } from "../types";
 import { DayBoardTab } from "../components/DayBoardTab";
 import { ActivityTab } from "../components/ActivityTab";
 import { Avatar } from "../components/Avatar";
 import { ShareLinkModal } from "../components/ShareLinkModal";
 import { CURRENT_USER } from "../constants";
+import { getHistory } from "../api-handlers/history";
 
 type Tab = "board" | "activity";
 
@@ -27,6 +28,17 @@ export function EventDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>("board");
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  async function refreshHistory() {
+    if (!eventId) return;
+    try {
+      setHistory(await getHistory(eventId));
+    } catch (err) {
+      console.error(err);
+      // non-fatal — history is a nice-to-have, don't block the rest of the page on it
+    }
+  }
 
   async function loadEvent() {
     if (!eventId) return;
@@ -38,9 +50,10 @@ export function EventDetailPage() {
       const found = events.find((e) => e.id === eventId) ?? null;
       setEvent(found);
       if (found) {
-        const [taskData, issueData] = await Promise.all([getTasks(eventId), getIssues(eventId)]);
+        const [taskData, issueData, historyData] = await Promise.all([getTasks(eventId), getIssues(eventId), getHistory(eventId)]);
         setTasks(taskData);
         setIssues(issueData);
+        setHistory(historyData);
       }
     } catch (err) {
       console.error(err);
@@ -63,6 +76,7 @@ export function EventDetailPage() {
       await completeTask({ eventId: event.id, taskId, status: nextStatus });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)));
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to update task. Please try again.");
@@ -83,6 +97,7 @@ export function EventDetailPage() {
       });
       setTasks((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to create task. Please try again.");
@@ -104,6 +119,7 @@ export function EventDetailPage() {
       });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to save task. Please try again.");
@@ -116,6 +132,7 @@ export function EventDetailPage() {
       await apiDeleteTask({ eventId: event.id, taskId });
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to delete task. Please try again.");
@@ -137,6 +154,7 @@ export function EventDetailPage() {
         prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? CURRENT_USER.id : undefined } : i))
       );
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to update issue. Please try again.");
@@ -149,6 +167,7 @@ export function EventDetailPage() {
       const created = await createIssue({ eventId: event.id, description, severity, raisedBy: CURRENT_USER.id });
       setIssues((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to flag issue. Please try again.");
@@ -161,6 +180,7 @@ export function EventDetailPage() {
       await apiEditIssue({ eventId: event.id, issueId, description: updates.description, severity: updates.severity });
       setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)));
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to save issue. Please try again.");
@@ -173,6 +193,7 @@ export function EventDetailPage() {
       await apiDeleteIssue({ eventId: event.id, issueId });
       setIssues((prev) => prev.filter((i) => i.id !== issueId));
       setRefreshKey((prev) => prev + 1);
+      refreshHistory();
     } catch (err) {
       console.error(err);
       alert("Failed to delete issue. Please try again.");
@@ -251,7 +272,7 @@ export function EventDetailPage() {
             issues={issues}
             tasks={tasks}
             members={event.members}
-            history={[]}
+            history={history}
             onToggleResolved={toggleIssueResolved}
             onAddIssue={addIssue}
             onEditIssue={editIssue}

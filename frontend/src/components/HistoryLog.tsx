@@ -3,10 +3,14 @@ import { Avatar } from './Avatar';
 
 const ACTION_VERB: Record<HistoryAction, string> = {
   task_created: 'added task',
+  task_edited: 'edited task',
   task_completed: 'closed',
   task_status_changed: 'moved',
+  task_deleted: 'deleted task',
   issue_flagged: 'flagged',
+  issue_edited: 'edited issue',
   issue_resolved: 'resolved',
+  issue_deleted: 'deleted issue',
   member_joined: 'joined',
   timeline_item_added: 'added to timeline',
 };

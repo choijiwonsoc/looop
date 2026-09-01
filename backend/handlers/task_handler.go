@@ -34,8 +34,18 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	logHistory(task.EventID, *task.AssignedTo, models.ActionTaskCreated, task.Title)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+func getTaskRef(objectID primitive.ObjectID) (eventID primitive.ObjectID, title string, ok bool) {
+	var task models.Task
+	err := database.DB.Collection("tasks").FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&task)
+	if err != nil {
+		return primitive.NilObjectID, "", false
+	}
+	return task.EventID, task.Title, true
 }
 
 func GetAllTasks(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +81,8 @@ func CompleteTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	eventID, title, ok := getTaskRef(objectID)
+
 	collection := database.DB.Collection("tasks")
 	result, err := collection.UpdateOne(
 		context.Background(),
@@ -85,6 +97,14 @@ func CompleteTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "task not found", http.StatusNotFound)
 		return
 	}
+	if ok {
+		action := models.ActionTaskStatusChanged
+		if req.Status == string(models.TaskStatusDone) {
+			action = models.ActionTaskCompleted
+		}
+		logHistory(eventID, req.ActorID, action, title)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Task resolved",
@@ -135,6 +155,8 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	eventID, existingTitle, ok := getTaskRef(objectID)
+
 	collection := database.DB.Collection("tasks")
 	result, err := collection.UpdateOne(
 		context.Background(),
@@ -148,6 +170,13 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	if result.MatchedCount == 0 {
 		http.Error(w, "task not found", http.StatusNotFound)
 		return
+	}
+	if ok {
+		label := existingTitle
+		if req.Title != nil {
+			label = *req.Title
+		}
+		logHistory(eventID, req.ActorID, models.ActionTaskEdited, label)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -164,6 +193,9 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
 		return
 	}
+	actorID := r.URL.Query().Get("actorId")
+
+	eventID, title, ok := getTaskRef(objectID)
 
 	collection := database.DB.Collection("tasks")
 	result, err := collection.DeleteOne(
@@ -177,6 +209,9 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if result.DeletedCount == 0 {
 		http.Error(w, "task not found", http.StatusNotFound)
 		return
+	}
+	if ok {
+		logHistory(eventID, actorID, models.ActionTaskDeleted, title)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

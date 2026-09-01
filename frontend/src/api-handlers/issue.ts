@@ -68,6 +68,7 @@ export async function editIssue(input: {
   description?: string;
   severity?: IssueSeverity;
   followUp?: string[];
+  actorId?: string;
 }): Promise<Issue> {
   const response = await fetch(
     `${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}`,
@@ -78,6 +79,7 @@ export async function editIssue(input: {
         description: input.description,
         severity: input.severity,
         followUp: input.followUp,
+        actorId: input.actorId,
       }),
     }
   );
@@ -88,13 +90,12 @@ export async function editIssue(input: {
 export async function deleteIssue(input: {
   eventId: string;
   issueId: string;
+  actorId?: string
 }): Promise<void> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  const query = input.actorId ? `?actorId=${encodeURIComponent(input.actorId)}` : '';
+  const response = await fetch(`${API_BASE_URL}/api/events/${input.eventId}/issues/${input.issueId}${query}`, {
+    method: "DELETE",
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to delete issue ${response.status}`);

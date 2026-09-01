@@ -47,6 +47,7 @@ export async function completeTask(input:{
     taskId: string;
     status: TaskStatus;
     followUp?: string[],
+    actorId?: string;
 }): Promise<void>{
     const response = await fetch(`${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}/status`, {
         method: "PATCH",
@@ -56,6 +57,7 @@ export async function completeTask(input:{
         body: JSON.stringify({
             status: input.status,
             followUp: input.followUp,
+            actorId: input.actorId
         })
     });
 
@@ -77,6 +79,7 @@ export async function editTask(input: {
   startDay?: string,
   endDay?: string,
   followUp?: string[];
+  actorId?: string;
 }): Promise<Task> {
   const response = await fetch(
     `${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}`,
@@ -91,6 +94,7 @@ export async function editTask(input: {
         startDay: input.startDay,
         endDay: input.endDay,
         followUp: input.followUp,
+        actorId: input.actorId,
       }),
     }
   );
@@ -101,13 +105,12 @@ export async function editTask(input: {
 export async function deleteTask(input: {
   eventId: string;
   taskId: string;
+  actorId?: string;
 }): Promise<void> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  const query = input.actorId ? `?actorId=${encodeURIComponent(input.actorId)}` : '';
+  const response = await fetch(`${API_BASE_URL}/api/events/${input.eventId}/tasks/${input.taskId}${query}`, {
+    method: "DELETE",
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to delete task ${response.status}`);
