@@ -21,14 +21,6 @@ Database:
 - npm
 - Go 1.22+
 
-## Project Structure
-
-.
-├── frontend/
-├── backend/
-├── README.md
-└── LICENSE
-
 ## Setup
 
 ### Backend

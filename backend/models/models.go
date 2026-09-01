@@ -150,8 +150,8 @@ type EditTaskRequest struct {
 	Notes *string        `json:"description,omitempty"`
 	Priority    *Priority `json:"priority,omitempty"`
 	AssignedTo *string        `json:"assignedTo,omitempty"`
-	StartDate *string        `json:"startDate,omitempty"`
-	EndDate *string        `json:"endDate,omitempty"`
+	StartDay *string        `json:"startDate,omitempty"`
+	EndDay *string        `json:"endDate,omitempty"`
 	FollowUp []string `bson:"followUp,omitempty" json:"followUp,omitempty"`
 }
 
