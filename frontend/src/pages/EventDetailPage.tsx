@@ -8,7 +8,6 @@ import { DayBoardTab } from "../components/DayBoardTab";
 import { ActivityTab } from "../components/ActivityTab";
 import { Avatar } from "../components/Avatar";
 import { ShareLinkModal } from "../components/ShareLinkModal";
-import { CURRENT_USER } from "../constants";
 import { getHistory } from "../api-handlers/history";
 import { getIdentity } from "../identity";
 
@@ -30,6 +29,7 @@ export function EventDetailPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const member = getIdentity();
 
   async function refreshHistory() {
     if (!eventId) return;
@@ -47,7 +47,6 @@ export function EventDetailPage() {
     setLoadError(null);
     try {
       // No single-event GET endpoint yet — fetch the list and find this one.
-      const member = getIdentity();
       const events = await getEvents(member.id);
       const found = events.find((e) => e.id === eventId) ?? null;
       setEvent(found);
@@ -151,10 +150,10 @@ export function EventDetailPage() {
         eventId: event.id,
         issueId,
         resolved: nextResolved,
-        resolvedBy: nextResolved ? CURRENT_USER.id : undefined,
+        resolvedBy: nextResolved ? member.id : undefined,
       });
       setIssues((prev) =>
-        prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? CURRENT_USER.id : undefined } : i))
+        prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? member.id : undefined } : i))
       );
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
@@ -167,7 +166,7 @@ export function EventDetailPage() {
   async function addIssue(description: string, severity: IssueSeverity) {
     if (!event) return;
     try {
-      const created = await createIssue({ eventId: event.id, description, severity, raisedBy: CURRENT_USER.id });
+      const created = await createIssue({ eventId: event.id, description, severity, raisedBy: member.id });
       setIssues((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
@@ -263,7 +262,7 @@ export function EventDetailPage() {
           <DayBoardTab
             event={event}
             tasks={tasks}
-            currentUserId={CURRENT_USER.id}
+            currentUserId={member.id}
             onToggleTaskDone={toggleTaskDone}
             onAddTask={addTask}
             onEditTask={editTask}

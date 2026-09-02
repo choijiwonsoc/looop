@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createEvent } from "../api-handlers/event";
-import { CURRENT_USER } from "../constants";
 import { Member } from "../types";
 import { getIdentity } from "../identity";
 

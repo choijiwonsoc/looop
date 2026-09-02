@@ -58,7 +58,7 @@ func GetAllEvents(w http.ResponseWriter, r *http.Request) {
 	collection := database.DB.Collection("events")
 	cursor, err := collection.Find(
 		context.Background(),
-		filter
+		filter,
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
