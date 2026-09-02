@@ -24,14 +24,7 @@ export function TaskCard({ task, assignee, onToggleDone, onEdit, onDelete }: Tas
     <>
     <Card className={`relative group ${done ? 'opacity-55' : ''}`}>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-            onClick={() => setShowDetails(true)}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-ink-soft hover:text-loop hover:bg-loop-soft transition-colors"
-            aria-label="View task details"
-            title="View details"
-          >
-            <span className="text-[11px] font-semibold">i</span>
-          </button>
+
         <button onClick={onEdit} className="w-6 h-6 flex items-center justify-center rounded-md text-ink-soft hover:text-loop hover:bg-loop-soft transition-colors" aria-label="Edit task">
           <EditIcon size={12} />
         </button>

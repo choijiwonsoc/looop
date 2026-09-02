@@ -80,7 +80,8 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Optional details…"
+              placeholder="Task details…"
+              required
               className="border border-line-strong rounded-lg px-3.5 py-2.5 text-sm bg-white focus:border-loop outline-none resize-none"
             />
           </label>
@@ -92,6 +93,7 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
                 type="date"
                 value={startDay}
                 onChange={(e) => setStartDay(e.target.value)}
+                required
                 className="border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
               />
             </label>
@@ -101,6 +103,7 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
                 type="date"
                 value={endDay}
                 onChange={(e) => setEndDay(e.target.value)}
+                required
                 className="border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
               />
             </label>
@@ -128,7 +131,6 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
                 onChange={(e) => setAssignedTo(e.target.value)}
                 className="border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
               >
-                <option value="">Unassigned</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}

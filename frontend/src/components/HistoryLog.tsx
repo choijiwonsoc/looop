@@ -2,7 +2,7 @@ import type { HistoryEntry, Member, HistoryAction } from '../types';
 import { Avatar } from './Avatar';
 
 const ACTION_VERB: Record<HistoryAction, string> = {
-  task_created: 'added task',
+  task_created: 'was assigned task',
   task_edited: 'edited task',
   task_completed: 'closed',
   task_status_changed: 'moved',

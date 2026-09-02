@@ -29,7 +29,7 @@ export function EventDetailPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const member = getIdentity();
+  
 
   async function refreshHistory() {
     if (!eventId) return;
@@ -46,6 +46,7 @@ export function EventDetailPage() {
     setLoading(true);
     setLoadError(null);
     try {
+      const member = getIdentity();
       // No single-event GET endpoint yet — fetch the list and find this one.
       const events = await getEvents(member.id);
       const found = events.find((e) => e.id === eventId) ?? null;
@@ -84,7 +85,7 @@ export function EventDetailPage() {
     }
   }
 
-  async function addTask(input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string, endDay?: string }) {
+  async function addTask(input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string, endDay?: string, followUp?: string[]; }) {
     if (!event) return;
     try {
       const created = await createTask({
@@ -95,6 +96,7 @@ export function EventDetailPage() {
         assignedTo: input.assignedTo ?? undefined,
         startDay: input.startDay,
         endDay: input.endDay,
+        followUp: input.followUp,
       });
       setTasks((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
@@ -146,6 +148,7 @@ export function EventDetailPage() {
     if (!issue || !event) return;
     const nextResolved = !issue.resolved;
     try {
+      const member = getIdentity();
       await resolveIssue({
         eventId: event.id,
         issueId,
@@ -166,6 +169,7 @@ export function EventDetailPage() {
   async function addIssue(description: string, severity: IssueSeverity) {
     if (!event) return;
     try {
+      const member = getIdentity();
       const created = await createIssue({ eventId: event.id, description, severity, raisedBy: member.id });
       setIssues((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
@@ -262,7 +266,7 @@ export function EventDetailPage() {
           <DayBoardTab
             event={event}
             tasks={tasks}
-            currentUserId={member.id}
+            currentUserId={getIdentity().id}
             onToggleTaskDone={toggleTaskDone}
             onAddTask={addTask}
             onEditTask={editTask}

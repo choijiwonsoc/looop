@@ -99,6 +99,7 @@ export function CreateEventPage() {
             placeholder="e.g. Distribution of bridesmaid and groomsmen duties"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            required
             className="border border-line-strong rounded-lg px-3.5 py-3 text-base bg-white focus:border-loop outline-none"
           />
         </label>

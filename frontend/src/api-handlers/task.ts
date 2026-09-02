@@ -21,6 +21,7 @@ export async function createTask(input:{
     assignedTo?: string;
     startDay?: string,
     endDay?: string,
+    followUp?: string[],
 
 }): Promise<Task>{
     const response = await fetch(`${API_BASE_URL}/api/tasks`, {
