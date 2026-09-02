@@ -5,7 +5,7 @@ import { resolveEventId, resolveTaskId, resolveIssueId } from "./resolvers";
 import { getIdentity } from "../identity";
 import { getHistory } from "../api-handlers/history";
 
-export function registerLooopTools() {
+export async function registerLooopTools() {
     if (!document.modelContext) {
         console.warn('WebMCP not available in this browser context — skipping tool registration.');
         return;
@@ -407,4 +407,10 @@ export function registerLooopTools() {
             };
         },
     });
+    const tools = await document.modelContext.getTools();
+
+    console.log(
+        "🛠️ Registered WebMCP tools:",
+        tools.map((tool) => tool.name)
+    );
 }
