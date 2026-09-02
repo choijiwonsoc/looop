@@ -3,6 +3,7 @@ import { createTask, editTask, completeTask, deleteTask } from "../api-handlers/
 import { createIssue, editIssue, resolveIssue, deleteIssue } from "../api-handlers/issue"
 import { resolveEventId, resolveTaskId, resolveIssueId } from "./resolvers";
 import { getIdentity } from "../identity";
+import { getHistory } from "../api-handlers/history";
 
 export function registerLooopTools() {
     if (!document.modelContext) {
@@ -265,7 +266,7 @@ export function registerLooopTools() {
     document.modelContext.registerTool({
         name: 'get_event_summary',
         description:
-            'Get a compact, read-only status summary for an event, including task completion, open urgent tasks, unresolved issues by severity, and an overall health score. This tool does not modify anything. Identify the event with eventId if known, otherwise eventName.',
+            'Get a compact, read-only status summary for an event, including task completion, open urgent tasks, unresolved issues by severity, an overall health score and history of logs for the event. This tool does not modify anything. Identify the event with eventId if known, otherwise eventName.',
 
         inputSchema: {
             type: 'object',
@@ -288,6 +289,8 @@ export function registerLooopTools() {
             let health = 100 - urgentOpen * 15 - highIssuesOpen * 20 - normalOpen * 5;
             health = Math.max(0, Math.min(100, health));
 
+            const history = await getHistory(eventId);
+
             return {
                 totalTasks: tasks.length,
                 doneCount,
@@ -295,6 +298,7 @@ export function registerLooopTools() {
                 issuesOpen: issues.filter((i) => !i.resolved).length,
                 highIssuesOpen,
                 healthScore: health,
+                history: history,
             };
         },
     });
@@ -371,13 +375,6 @@ export function registerLooopTools() {
             };
         },
     });
-
-    // NOT REGISTERED — no backend support yet, would throw at runtime:
-    // - generate_starter_tasks: needs a POST /api/events/:id/tasks/bulk handler (doesn't exist)
-    // - get_recent_changes: needs a real activity/history endpoint (doesn't exist — HistoryLog
-    //   is currently mock-only, see note on EventDetailPage below)
-    // Re-add these once those backend pieces exist.
-
 
     document.modelContext.registerTool({
         name: 'generate_starter_task_suggestions',
