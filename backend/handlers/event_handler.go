@@ -7,11 +7,23 @@ import (
 	"looop-backend/models"
 	"net/http"
 	"time"
+	"crypto/rand"
 
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func generateInviteCode() string {
+	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // no ambiguous 0/O/1/I
+	b := make([]byte, 6)
+	rand.Read(b)
+	for i := range b {
+		b[i] = chars[int(b[i])%len(chars)]
+	}
+	return "LOOP-" + string(b)
+}
+
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	var event models.Event
@@ -22,6 +34,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	event.ID = primitive.NewObjectID()
 	event.CreatedAt = time.Now()
+	event.InviteCode = generateInviteCode()
 
 	collection := database.DB.Collection("events")
 	result, err := collection.InsertOne(
@@ -37,10 +50,15 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllEvents(w http.ResponseWriter, r *http.Request) {
+	memberId := r.URL.Query().Get("memberId")
+	filter := bson.M{}
+	if memberId != "" {
+		filter = bson.M{"members.id": memberId}
+	}
 	collection := database.DB.Collection("events")
 	cursor, err := collection.Find(
 		context.Background(),
-		bson.M{},
+		filter
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -194,4 +212,50 @@ func GetIssues(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(issues)
+}
+
+type JoinEventRequest struct {
+	InviteCode string        `json:"inviteCode"`
+	Member     models.Member `json:"member"`
+}
+
+func JoinEvent(w http.ResponseWriter, r *http.Request) {
+	var req JoinEventRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	collection := database.DB.Collection("events")
+	var event models.Event
+	err := collection.FindOne(context.Background(), bson.M{"inviteCode": req.InviteCode}).Decode(&event)
+	if err != nil {
+		http.Error(w, "Invite code not found", http.StatusNotFound)
+		return
+	}
+
+	alreadyMember := false
+	for _, m := range event.Members {
+		if m.ID == req.Member.ID {
+			alreadyMember = true
+			break
+		}
+	}
+
+	if !alreadyMember {
+		_, err = collection.UpdateOne(
+			context.Background(),
+			bson.M{"_id": event.ID},
+			bson.M{"$push": bson.M{"members": req.Member}},
+		)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		event.Members = append(event.Members, req.Member)
+		logHistory(event.ID, req.Member.ID, models.ActionMemberJoined, req.Member.Name+" joined")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(event)
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 export function ShareLinkModal({ inviteCode, onClose }: { inviteCode: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
-  const link = `https://looop.app/join/${inviteCode}`;
+  const link = `${window.location.origin}/join/${inviteCode}`;
 
   function copy() {
     navigator.clipboard.writeText(link);

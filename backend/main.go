@@ -62,6 +62,7 @@ func main() {
 	r.Delete("/api/events/{eventId}/issues/{id}", handlers.DeleteIssue)
 
 	r.Get("/api/events/{eventId}/history", handlers.GetHistory)
+	r.Post("/api/events/join", handlers.JoinEvent)
 
 	log.Println("Server running on :8080")
 	http.ListenAndServe(":8080", r)

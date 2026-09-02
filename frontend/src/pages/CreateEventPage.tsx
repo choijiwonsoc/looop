@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createEvent } from "../api-handlers/event";
 import { CURRENT_USER } from "../constants";
 import { Member } from "../types";
+import { getIdentity } from "../identity";
 
 const EVENT_TYPES = ["Project", "Conference", "Party", "Household", "Other"];
 
@@ -24,11 +25,7 @@ export function CreateEventPage() {
     setError(null);
 
     try {
-      const currentUser: Member = {
-        id: username,
-        name: username,
-        color: "#2F5EFF",
-      };
+      const currentUser = getIdentity();
       await createEvent({
         name,
         type,
@@ -36,7 +33,7 @@ export function CreateEventPage() {
         startDate,
         endDate: isOngoing ? undefined : endDate || undefined,
         members: [currentUser],
-        inviteCode: `LOOP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+        inviteCode: '',
       });
       navigate("/");
     } catch (err) {

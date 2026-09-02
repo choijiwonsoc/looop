@@ -6,6 +6,7 @@ import { EditEventModal } from '../components/EditEventModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { computeHealth } from '../utils/health';
 import type { EventBoard } from '../types';
+import { getIdentity } from '../identity';
 
 interface EnrichedEvent {
   event: EventBoard;
@@ -26,7 +27,8 @@ export function EventsListPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const events = await getEvents();
+      const member = getIdentity();
+      const events = await getEvents(member.id);
       const withStats = await Promise.all(
         events.map(async (event) => {
           const [tasks, issues] = await Promise.all([getTasks(event.id), getIssues(event.id)]);

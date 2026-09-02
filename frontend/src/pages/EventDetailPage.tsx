@@ -10,6 +10,7 @@ import { Avatar } from "../components/Avatar";
 import { ShareLinkModal } from "../components/ShareLinkModal";
 import { CURRENT_USER } from "../constants";
 import { getHistory } from "../api-handlers/history";
+import { getIdentity } from "../identity";
 
 type Tab = "board" | "activity";
 
@@ -46,7 +47,8 @@ export function EventDetailPage() {
     setLoadError(null);
     try {
       // No single-event GET endpoint yet — fetch the list and find this one.
-      const events = await getEvents();
+      const member = getIdentity();
+      const events = await getEvents(member.id);
       const found = events.find((e) => e.id === eventId) ?? null;
       setEvent(found);
       if (found) {
@@ -104,7 +106,7 @@ export function EventDetailPage() {
     }
   }
 
-  async function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null, startDay?: string, endDay?: string}) {
+  async function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null, startDay?: string, endDay?: string, followUp?:string[]}) {
     if (!event) return;
     try {
       await apiEditTask({
@@ -116,6 +118,7 @@ export function EventDetailPage() {
         assignedTo: updates.assignedTo ?? undefined,
         startDay: updates.startDay,
         endDay: updates.endDay,
+        followUp: updates.followUp,
       });
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
       setRefreshKey((prev) => prev + 1);

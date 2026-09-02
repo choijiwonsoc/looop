@@ -8,7 +8,7 @@ interface CreateTaskModalProps {
   dayLabel?: string;
   editingTask?: Task;
   onClose: () => void;
-  onSubmit: (input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string; endDay?: string }) => void;
+  onSubmit: (input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string; endDay?: string, followUp?: string[] }) => void;
 }
 
 export function CreateTaskModal({ members, initialPriority = 'normal', initialDay, dayLabel, editingTask, onClose, onSubmit }: CreateTaskModalProps) {
@@ -20,6 +20,24 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
   const [startDay, setStartDay] = useState<string>(editingTask?.startDay ?? initialDay ?? '');
   const [endDay, setEndDay] = useState<string>(editingTask?.endDay ?? initialDay ?? '');
 
+  const [followUp, setFollowUp] = useState<string[]>(
+    editingTask?.followUp ?? []
+  );
+
+  const [followUpInput, setFollowUpInput] = useState('');
+
+  function addFollowUp() {
+    const value = followUpInput.trim();
+    if (!value) return;
+
+    setFollowUp((prev) => [...prev, value]);
+    setFollowUpInput('');
+  }
+
+  function removeFollowUp(index: number) {
+    setFollowUp((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
@@ -30,6 +48,7 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
       assignedTo: assignedTo || null,
       startDay: startDay || undefined,
       endDay: endDay || startDay || undefined,
+      followUp: followUp || null,
     });
     onClose();
   }
@@ -115,6 +134,57 @@ export function CreateTaskModal({ members, initialPriority = 'normal', initialDa
                 ))}
               </select>
             </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-xs uppercase tracking-wide text-ink-soft">
+                Follow Up Notes
+              </span>
+
+              <div className="flex gap-2">
+                <input
+                  value={followUpInput}
+                  onChange={(e) => setFollowUpInput(e.target.value)}
+                  placeholder="Add follow-up note..."
+                  className="flex-1 border border-line-strong rounded-lg px-3 py-2.5 text-sm bg-white focus:border-loop outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addFollowUp();
+                    }
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={addFollowUp}
+                  className="px-3 py-2 bg-loop text-white rounded-lg text-sm"
+                >
+                  Add
+                </button>
+              </div>
+
+              {followUp.length > 0 && (
+                <div className="flex flex-col gap-2 mt-2">
+                  {followUp.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                    >
+                      <span>{item}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFollowUp(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </label>
+
           </div>
 
           <div className="flex gap-2 mt-2">

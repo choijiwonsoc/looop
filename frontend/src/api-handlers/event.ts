@@ -1,9 +1,9 @@
 import { EventBoard, Task, Issue, IssueSeverity, TaskStatus, Member } from "../types";
 import { API_BASE_URL } from "../api";
 
-export async function getEvents(): Promise<EventBoard[]>{
+export async function getEvents(memberId: string): Promise<EventBoard[]>{
   console.log(API_BASE_URL);
-    const response = await fetch(`${API_BASE_URL}/api/events`);
+    const response = await fetch(`${API_BASE_URL}/api/events?memberId=${encodeURIComponent(memberId)}`);
 
     if(!response.ok){
         throw new Error(`Failed to fetch events ${response.status}`);
@@ -11,6 +11,16 @@ export async function getEvents(): Promise<EventBoard[]>{
     const data = await response.json();
     console.log(data);
     return data;
+}
+
+export async function joinEvent(input: { inviteCode: string; member: Member }): Promise<EventBoard> {
+  const response = await fetch(`${API_BASE_URL}/api/events/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error(`Failed to join event ${response.status}`);
+  return response.json();
 }
 
 export async function createEvent(input:{
