@@ -8,7 +8,6 @@ const EVENT_TYPES = ["Project", "Conference", "Party", "Household", "Other"];
 
 export function CreateEventPage() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<string>("Other");
@@ -53,19 +52,7 @@ export function CreateEventPage() {
       {error && <p className="text-urgent text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <label className="flex flex-col gap-2">
-          <span className="text-xs uppercase tracking-wide text-ink-soft">
-            Username for this event
-          </span>
-          <input
-            type="text"
-            placeholder="How do people identify you in this event?"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="border border-line-strong rounded-lg px-3.5 py-3 text-base bg-white focus:border-loop outline-none"
-          />
-        </label>
+
 
         <label className="flex flex-col gap-2">
           <span className="text-xs uppercase tracking-wide text-ink-soft">
