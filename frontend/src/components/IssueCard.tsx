@@ -54,6 +54,13 @@ export function IssueCard({
             <TrashIcon size={12} />
           </button>
         </div>
+        <button
+            onClick={() => setShowDetails(true)}
+            className="text-xs font-medium px-2.5 py-1 rounded-md text-loop bg-loop-soft hover:bg-loop/20 transition-colors"
+          >
+            View details
+          </button>
+
       </Card>
 
       {showDetails && (
