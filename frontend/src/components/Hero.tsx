@@ -1,133 +1,92 @@
-import React from "react";
-
 export function LooopHero() {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-white mb-8">
-      {/* Ambient background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-loop/5 blur-3xl" />
+    <section className="mb-7">
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-white">
+        {/* subtle background glow */}
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-loop/5 blur-3xl"
+        />
 
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-loop/20 to-transparent" />
-      </div>
+        <div className="relative flex items-center gap-6 px-6 py-5 sm:px-8 sm:py-6">
+          {/* Animated icon */}
+          <div className="shrink-0">
+            <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
+              <svg
+                viewBox="0 0 100 100"
+                className="h-full w-full"
+                fill="none"
+                aria-hidden="true"
+              >
+                {/* outer loop */}
+                <rect
+                  x="20"
+                  y="20"
+                  width="60"
+                  height="60"
+                  rx="20"
+                  className="stroke-line"
+                  strokeWidth="2"
+                />
 
-      <div className="relative flex flex-col items-center px-6 py-12 sm:px-10 sm:py-14">
-        {/* Animated loop */}
-        <div className="relative mb-7 h-24 w-24">
-          <svg
-            viewBox="0 0 100 100"
-            className="h-full w-full"
-            fill="none"
-            aria-hidden="true"
-          >
-            {/* Outer loop */}
-            <rect
-              x="18"
-              y="18"
-              width="64"
-              height="64"
-              rx="22"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="text-line"
-            />
+                {/* animated loop */}
+                <path
+                  d="M50 27
+                     C62 27 73 37 73 50
+                     C73 62 62 73 50 73
+                     C38 73 27 62 27 50
+                     C27 38 38 27 50 27Z"
+                  className="stroke-loop"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray="12 8"
+                />
 
-            {/* Inner loop */}
-            <rect
-              x="29"
-              y="29"
-              width="42"
-              height="42"
-              rx="15"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="4 5"
-              className="text-loop/30"
-            />
+                {/* orbiting dot */}
+                <circle
+                  cx="50"
+                  cy="27"
+                  r="4"
+                  className="fill-loop"
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 50 50"
+                    to="360 50 50"
+                    dur="4s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
 
-            {/* Orbiting dots */}
-            <g className="loop-orbit">
-              <circle
-                cx="50"
-                cy="10"
-                r="4"
-                className="fill-loop"
-              />
-            </g>
+                {/* center */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="5"
+                  className="fill-ink"
+                />
+              </svg>
+            </div>
+          </div>
 
-            <g className="loop-orbit-reverse">
-              <circle
-                cx="50"
-                cy="90"
-                r="3"
-                className="fill-ink/40"
-              />
-            </g>
+          {/* Text */}
+          <div className="min-w-0">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-loop">
+              Looop
+            </p>
 
-            {/* Center */}
-            <circle
-              cx="50"
-              cy="50"
-              r="5"
-              className="fill-ink"
-            />
-          </svg>
-        </div>
+            <h2 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+              Everything your group needs, in one place.
+            </h2>
 
-        {/* Copy */}
-        <div className="max-w-xl text-center">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-loop">
-            Looop
-          </p>
-
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-ink">
-            Everything your group needs,
-            <br className="hidden sm:block" />
-            <span className="text-ink/50"> in one place.</span>
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-ink-soft">
-            Plan events, organize tasks, assign people, and keep track of
-            issues without jumping between different apps.
-          </p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-soft">
+              Plan events, organize tasks, assign people, and keep track of
+              issues without jumping between different apps.
+            </p>
+          </div>
         </div>
       </div>
-
-      <style>{`
-        .loop-orbit {
-          transform-origin: 50px 50px;
-          animation: loop-spin 7s linear infinite;
-        }
-
-        .loop-orbit-reverse {
-          transform-origin: 50px 50px;
-          animation: loop-spin-reverse 10s linear infinite;
-        }
-
-        @keyframes loop-spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes loop-spin-reverse {
-          from {
-            transform: rotate(360deg);
-          }
-          to {
-            transform: rotate(0deg);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .loop-orbit,
-          .loop-orbit-reverse {
-            animation: none;
-          }
-        }
-      `}</style>
     </section>
   );
 }
