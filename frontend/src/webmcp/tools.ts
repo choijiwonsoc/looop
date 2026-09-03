@@ -18,7 +18,12 @@ import {
   resolveIssue,
   deleteIssue,
 } from "../api-handlers/issue";
-import { resolveEventId, resolveTaskId, resolveIssueId, resolveMemberId } from "./resolvers";
+import {
+  resolveEventId,
+  resolveTaskId,
+  resolveIssueId,
+  resolveMemberId,
+} from "./resolvers";
 import { getIdentity } from "../identity";
 import { getHistory } from "../api-handlers/history";
 
@@ -80,7 +85,14 @@ export function registerLooopTools() {
     },
     execute: async (input) => {
       const member = getIdentity();
-      const created = await createEvent({ ...input, members: [member], inviteCode: "" });
+      const created = await createEvent({
+        ...input,
+        members: [member],
+        inviteCode: "",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
       return created;
     },
   });
@@ -147,17 +159,15 @@ export function registerLooopTools() {
         priority: { type: "string", enum: ["urgent", "normal", "optional"] },
         assignedTo: {
           type: "string",
-          description: "member to assign task to, optional"
+          description: "member to assign task to, optional",
         },
         startDay: {
           type: "string",
-          description:
-            "ISO date.",
+          description: "ISO date.",
         },
         endDay: {
           type: "string",
-          description:
-            "ISO date.",
+          description: "ISO date.",
         },
       },
       required: ["title", "notes", "priority", "startDay", "endDay"],
@@ -167,9 +177,14 @@ export function registerLooopTools() {
       const member = getIdentity();
       let assignedTo = member.id;
       if (input.assignedTo != null) {
-        assignedTo = await resolveMemberId(eventId, { memberName: input.assignedTo });
+        assignedTo = await resolveMemberId(eventId, {
+          memberName: input.assignedTo,
+        });
       }
       const created = await createTask({ ...input, eventId, assignedTo });
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
       return created;
     },
   });
@@ -202,7 +217,12 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const taskId = await resolveTaskId(eventId, input);
       const member = getIdentity();
-      const result = await editTask({ ...input, eventId, taskId, actorId: member.id });
+      const result = await editTask({
+        ...input,
+        eventId,
+        taskId,
+        actorId: member.id,
+      });
       return result;
     },
   });
@@ -226,7 +246,12 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const taskId = await resolveTaskId(eventId, input);
       const member = getIdentity();
-      const result = await completeTask({ eventId, taskId, status: input.status, actorId: member.id });
+      const result = await completeTask({
+        eventId,
+        taskId,
+        status: input.status,
+        actorId: member.id,
+      });
       return result;
     },
   });
@@ -272,7 +297,15 @@ export function registerLooopTools() {
     execute: async (input) => {
       const eventId = await resolveEventId(input);
       const member = getIdentity();
-      const created = await createIssue({ eventId, description: input.description, severity: input.severity, raisedBy: member.id });
+      const created = await createIssue({
+        eventId,
+        description: input.description,
+        severity: input.severity,
+        raisedBy: member.id,
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
       return created;
     },
   });
@@ -301,7 +334,13 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await editIssue({ eventId, issueId, description: input.description, severity: input.severity, actorId: member.id });
+      const result = await editIssue({
+        eventId,
+        issueId,
+        description: input.description,
+        severity: input.severity,
+        actorId: member.id,
+      });
       return result;
     },
   });
@@ -325,7 +364,12 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await resolveIssue({ eventId, issueId, resolved: input.resolved, resolvedBy: member.id });
+      const result = await resolveIssue({
+        eventId,
+        issueId,
+        resolved: input.resolved,
+        resolvedBy: member.id,
+      });
       return result;
     },
   });
@@ -348,7 +392,11 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await deleteIssue({ eventId, issueId, actorId: member.id });
+      const result = await deleteIssue({
+        eventId,
+        issueId,
+        actorId: member.id,
+      });
       return result;
     },
   });
@@ -508,3 +556,77 @@ export function registerLooopTools() {
     },
   });
 }
+
+document.modelContext.registerTool({
+    name: "get_next_priority",
+    description:
+      "Look across all open tasks and unresolved issues on an event and identify what needs attention first. READ-ONLY — does not modify anything. Ranks by urgency (priority/severity) and how long something has been sitting open. Returns a ranked list plus context for the top item — use this to recommend what the user should tackle first.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        eventId: { type: "string" },
+        eventName: { type: "string" },
+      },
+      required: [],
+    },
+    execute: async (input) => {
+      const eventId = await resolveEventId(input);
+      const [tasks, issues] = await Promise.all([getTasks(eventId), getIssues(eventId)]);
+
+      const now = Date.now();
+      const ageInHours = (iso: string) => (now - new Date(iso).getTime()) / (1000 * 60 * 60);
+
+      const TASK_PRIORITY_WEIGHT: Record<string, number> = { urgent: 100, normal: 50, optional: 10 };
+      const ISSUE_SEVERITY_WEIGHT: Record<string, number> = { high: 100, medium: 50, low: 10 };
+
+      const openTasks = tasks
+        .filter((t) => t.status !== "done")
+        .map((t) => ({
+          kind: "task" as const,
+          id: t.id,
+          label: t.title,
+          notes: t.notes ?? "",
+          priority: t.priority,
+          ageHours: Math.round(ageInHours(t.createdAt)),
+          // urgency score: base weight from priority, plus a small nudge for how long it's been open
+          score: TASK_PRIORITY_WEIGHT[t.priority] + Math.min(ageInHours(t.createdAt) / 2, 20),
+        }));
+
+      const openIssues = issues
+        .filter((i) => !i.resolved)
+        .map((i) => ({
+          kind: "issue" as const,
+          id: i.id,
+          label: i.description,
+          notes: "",
+          severity: i.severity,
+          ageHours: Math.round(ageInHours(i.createdAt)),
+          // issues get a flat bump over tasks of equivalent weight — a live problem usually
+          // blocks other work, so it's weighted to surface slightly above an equivalent task
+          score: ISSUE_SEVERITY_WEIGHT[i.severity] + Math.min(ageInHours(i.createdAt) / 2, 20) + 5,
+        }));
+
+      const ranked = [...openTasks, ...openIssues].sort((a, b) => b.score - a.score);
+
+      if (ranked.length === 0) {
+        return {
+          message: "Nothing open — no unfinished tasks or unresolved issues on this event.",
+          ranked: [],
+        };
+      }
+
+      const top = ranked[0];
+
+      return {
+        recommendation: top,
+        ranked: ranked.slice(0, 8).map((r) => ({
+          kind: r.kind,
+          label: r.label,
+          urgency: r.kind === "task" ? r.priority : r.severity,
+          openForHours: r.ageHours,
+        })),
+        instruction:
+          "The 'recommendation' field is the single highest-priority item to suggest tackling first. Present it clearly, then optionally mention the next couple of items from 'ranked' as runners-up. Do not modify anything — this is informational only.",
+      };
+    },
+  });
