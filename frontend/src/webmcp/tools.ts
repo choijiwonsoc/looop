@@ -555,9 +555,8 @@ export function registerLooopTools() {
       };
     },
   });
-}
 
-document.modelContext.registerTool({
+  document.modelContext.registerTool({
     name: "get_next_priority",
     description:
       "Look across all open tasks and unresolved issues on an event and identify what needs attention first. READ-ONLY — does not modify anything. Ranks by urgency (priority/severity) and how long something has been sitting open. Returns a ranked list plus context for the top item — use this to recommend what the user should tackle first.",
@@ -571,13 +570,25 @@ document.modelContext.registerTool({
     },
     execute: async (input) => {
       const eventId = await resolveEventId(input);
-      const [tasks, issues] = await Promise.all([getTasks(eventId), getIssues(eventId)]);
+      const [tasks, issues] = await Promise.all([
+        getTasks(eventId),
+        getIssues(eventId),
+      ]);
 
       const now = Date.now();
-      const ageInHours = (iso: string) => (now - new Date(iso).getTime()) / (1000 * 60 * 60);
+      const ageInHours = (iso: string) =>
+        (now - new Date(iso).getTime()) / (1000 * 60 * 60);
 
-      const TASK_PRIORITY_WEIGHT: Record<string, number> = { urgent: 100, normal: 50, optional: 10 };
-      const ISSUE_SEVERITY_WEIGHT: Record<string, number> = { high: 100, medium: 50, low: 10 };
+      const TASK_PRIORITY_WEIGHT: Record<string, number> = {
+        urgent: 100,
+        normal: 50,
+        optional: 10,
+      };
+      const ISSUE_SEVERITY_WEIGHT: Record<string, number> = {
+        high: 100,
+        medium: 50,
+        low: 10,
+      };
 
       const openTasks = tasks
         .filter((t) => t.status !== "done")
@@ -589,7 +600,9 @@ document.modelContext.registerTool({
           priority: t.priority,
           ageHours: Math.round(ageInHours(t.createdAt)),
           // urgency score: base weight from priority, plus a small nudge for how long it's been open
-          score: TASK_PRIORITY_WEIGHT[t.priority] + Math.min(ageInHours(t.createdAt) / 2, 20),
+          score:
+            TASK_PRIORITY_WEIGHT[t.priority] +
+            Math.min(ageInHours(t.createdAt) / 2, 20),
         }));
 
       const openIssues = issues
@@ -603,14 +616,20 @@ document.modelContext.registerTool({
           ageHours: Math.round(ageInHours(i.createdAt)),
           // issues get a flat bump over tasks of equivalent weight — a live problem usually
           // blocks other work, so it's weighted to surface slightly above an equivalent task
-          score: ISSUE_SEVERITY_WEIGHT[i.severity] + Math.min(ageInHours(i.createdAt) / 2, 20) + 5,
+          score:
+            ISSUE_SEVERITY_WEIGHT[i.severity] +
+            Math.min(ageInHours(i.createdAt) / 2, 20) +
+            5,
         }));
 
-      const ranked = [...openTasks, ...openIssues].sort((a, b) => b.score - a.score);
+      const ranked = [...openTasks, ...openIssues].sort(
+        (a, b) => b.score - a.score,
+      );
 
       if (ranked.length === 0) {
         return {
-          message: "Nothing open — no unfinished tasks or unresolved issues on this event.",
+          message:
+            "Nothing open — no unfinished tasks or unresolved issues on this event.",
           ranked: [],
         };
       }
@@ -630,3 +649,4 @@ document.modelContext.registerTool({
       };
     },
   });
+}
