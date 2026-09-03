@@ -3,6 +3,8 @@
 Looop is a event management website with MCP tools registered, facilitating human and agent collaboration for efficient workflow. 
 Looop gives every event (wedding party, offsite, household chore chart) one shared board, which includes tasks grouped by urgency, flagged issues for attention, day-by-day timeline and a computed event health score. The core actions on the board such as creating and editing tasks, flagging and resolving issues, are exposed as MCP tools. Users can simply ask their agent "What tasks are still open on the wedding board?" or "Add an urgent task for the caterer" or "Flag that the venue has not confirmed headcount". The agent can even act as a collaborator, proposing **concrete next steps for a stuck task or open issue**, as well as **starter tasks for event based on its title and description**, and providing a **concise summary of the event history**.
 
+### Run Live Link in ChatGPT's in-app browser to experience the power of its WebMCP tools https://looop-orpin.vercel.app/
+
 ## Architecture
 
 Frontend:
