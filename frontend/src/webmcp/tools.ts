@@ -551,7 +551,7 @@ export function registerLooopTools() {
         startDate: event.startDate,
         endDate: event.endDate,
         instruction:
-          "Generate a sensible starter checklist based on the event type, description, and dates. Return suggested tasks only — each with a title and priority (urgent/normal/optional). Do not create anything yourself. If the user approves some or all of them, call create_task once per approved task.",
+          "Generate a sensible starter checklist based on the event type, description, and dates. Return suggested tasks only — each with a title and priority (urgent/normal/optional) and suggested start and end date. Do not create anything yourself. If the user approves some or all of them, call create_task once per approved task.",
       };
     },
   });
