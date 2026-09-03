@@ -21,7 +21,6 @@ import {
 import { resolveEventId, resolveTaskId, resolveIssueId, resolveMemberId } from "./resolvers";
 import { getIdentity } from "../identity";
 import { getHistory } from "../api-handlers/history";
-import { notifyMutation } from "./bus";
 
 export function registerLooopTools() {
   if (!document.modelContext) {
@@ -64,21 +63,29 @@ export function registerLooopTools() {
         },
         description: {
           type: "string",
-          description: "Short description of event, use event name if description is not provided",
+          description: "Short description of event",
         },
         startDate: {
           type: "string",
           description: "ISO date, default to current date if none given",
         },
-        endDate: { type: "string", description: "ISO date. Omit entirely for an ongoing event with no end date — do not guess, ask the user if it's unclear." },
+        endDate: {
+          type: ["string", "null"],
+          description:
+            "ISO date the event ends. Set to null if the event is ongoing/has no end date. " +
+            "Do not guess — if this isn't clear from context, ask the user whether the event has an end date before calling this tool.",
+        },
       },
-      required: ["name", "type", "description", "startDate"],
+      required: ["name", "type", "description", "startDate", "endDate"],
     },
     execute: async (input) => {
       const member = getIdentity();
-      const created = await createEvent({ ...input, members: [member], inviteCode: "" });
-      notifyMutation();
-      return created;
+
+      return createEvent({
+        ...input,
+        members: [member],
+        inviteCode: "",
+      });
     },
   });
 
@@ -105,9 +112,7 @@ export function registerLooopTools() {
     },
     execute: async (input) => {
       const eventId = await resolveEventId(input);
-      const result = await editEvent({ ...input, eventId });
-      notifyMutation();
-      return result;
+      return editEvent({ ...input, eventId });
     },
   });
 
@@ -125,9 +130,7 @@ export function registerLooopTools() {
     },
     execute: async (input) => {
       const eventId = await resolveEventId(input);
-      const result = await deleteEvent({ eventId });
-      notifyMutation();
-      return result;
+      return deleteEvent({ eventId });
     },
   });
 
@@ -164,13 +167,14 @@ export function registerLooopTools() {
     execute: async (input) => {
       const eventId = await resolveEventId(input);
       const member = getIdentity();
-      let assignedTo = member.id;
-      if (input.assignedTo != null) {
-        assignedTo = await resolveMemberId(eventId, { memberName: input.assignedTo });
+      if (input.assignedTo == null) {
+        return createTask({ ...input, eventId: eventId, assignedTo: member.id });
+      } else {
+        const memberId = await resolveMemberId(eventId, {
+          memberName: input.assignedTo,
+        });
+        return createTask({ ...input, eventId: eventId, assignedTo: memberId });
       }
-      const created = await createTask({ ...input, eventId, assignedTo });
-      notifyMutation();
-      return created;
     },
   });
 
@@ -202,9 +206,7 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const taskId = await resolveTaskId(eventId, input);
       const member = getIdentity();
-      const result = await editTask({ ...input, eventId, taskId, actorId: member.id });
-      notifyMutation();
-      return result;
+      return editTask({ ...input, eventId, taskId, actorId: member.id });
     },
   });
 
@@ -227,9 +229,12 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const taskId = await resolveTaskId(eventId, input);
       const member = getIdentity();
-      const result = await completeTask({ eventId, taskId, status: input.status, actorId: member.id });
-      notifyMutation();
-      return result;
+      return completeTask({
+        eventId,
+        taskId,
+        status: input.status,
+        actorId: member.id,
+      });
     },
   });
 
@@ -251,9 +256,7 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const taskId = await resolveTaskId(eventId, input);
       const member = getIdentity();
-      const result = await deleteTask({ eventId, taskId, actorId: member.id });
-      notifyMutation();
-      return result;
+      return deleteTask({ eventId, taskId, actorId: member.id });
     },
   });
 
@@ -275,9 +278,12 @@ export function registerLooopTools() {
     execute: async (input) => {
       const eventId = await resolveEventId(input);
       const member = getIdentity();
-      const created = await createIssue({ eventId, description: input.description, severity: input.severity, raisedBy: member.id });
-      notifyMutation();
-      return created;
+      return createIssue({
+        eventId,
+        description: input.description,
+        severity: input.severity,
+        raisedBy: member.id,
+      });
     },
   });
 
@@ -305,9 +311,13 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await editIssue({ eventId, issueId, description: input.description, severity: input.severity, actorId: member.id });
-      notifyMutation();
-      return result;
+      return editIssue({
+        eventId,
+        issueId,
+        description: input.description,
+        severity: input.severity,
+        actorId: member.id,
+      });
     },
   });
 
@@ -330,9 +340,12 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await resolveIssue({ eventId, issueId, resolved: input.resolved, resolvedBy: member.id });
-      notifyMutation();
-      return result;
+      return resolveIssue({
+        eventId,
+        issueId,
+        resolved: input.resolved,
+        resolvedBy: member.id,
+      });
     },
   });
 
@@ -354,9 +367,7 @@ export function registerLooopTools() {
       const eventId = await resolveEventId(input);
       const issueId = await resolveIssueId(eventId, input);
       const member = getIdentity();
-      const result = await deleteIssue({ eventId, issueId, actorId: member.id });
-      notifyMutation();
-      return result;
+      return deleteIssue({ eventId, issueId, actorId: member.id });
     },
   });
 
@@ -397,7 +408,7 @@ export function registerLooopTools() {
       health = Math.max(0, Math.min(100, health));
 
       const history = await getHistory(eventId);
-      
+
       return {
         totalTasks: tasks.length,
         doneCount,

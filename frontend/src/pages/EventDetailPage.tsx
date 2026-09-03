@@ -1,26 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getEvents, getTasks, getIssues } from "../api-handlers/event";
-import {
-  createTask,
-  editTask as apiEditTask,
-  completeTask,
-  deleteTask as apiDeleteTask,
-} from "../api-handlers/task";
-import {
-  createIssue,
-  editIssue as apiEditIssue,
-  resolveIssue,
-  deleteIssue as apiDeleteIssue,
-} from "../api-handlers/issue";
-import type {
-  EventBoard,
-  Task,
-  Issue,
-  Priority,
-  IssueSeverity,
-  HistoryEntry,
-} from "../types";
+import { createTask, editTask as apiEditTask, completeTask, deleteTask as apiDeleteTask } from "../api-handlers/task";
+import { createIssue, editIssue as apiEditIssue, resolveIssue, deleteIssue as apiDeleteIssue } from "../api-handlers/issue";
+import type { EventBoard, Task, Issue, Priority, IssueSeverity, HistoryEntry } from "../types";
 import { DayBoardTab } from "../components/DayBoardTab";
 import { ActivityTab } from "../components/ActivityTab";
 import { Avatar } from "../components/Avatar";
@@ -46,6 +29,7 @@ export function EventDetailPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  
 
   async function refreshHistory() {
     if (!eventId) return;
@@ -68,11 +52,7 @@ export function EventDetailPage() {
       const found = events.find((e) => e.id === eventId) ?? null;
       setEvent(found);
       if (found) {
-        const [taskData, issueData, historyData] = await Promise.all([
-          getTasks(eventId),
-          getIssues(eventId),
-          getHistory(eventId),
-        ]);
+        const [taskData, issueData, historyData] = await Promise.all([getTasks(eventId), getIssues(eventId), getHistory(eventId)]);
         setTasks(taskData);
         setIssues(issueData);
         setHistory(historyData);
@@ -86,11 +66,8 @@ export function EventDetailPage() {
   }
 
   useEffect(() => {
-    function handleMutation() {
-      loadEvent();
-    }
-    window.addEventListener("looop:mutated", handleMutation);
-    return () => window.removeEventListener("looop:mutated", handleMutation);
+    loadEvent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, refreshKey]);
 
   async function toggleTaskDone(taskId: string) {
@@ -99,9 +76,7 @@ export function EventDetailPage() {
     const nextStatus = task.status === "done" ? "todo" : "done";
     try {
       await completeTask({ eventId: event.id, taskId, status: nextStatus });
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)),
-      );
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)));
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
     } catch (err) {
@@ -110,15 +85,7 @@ export function EventDetailPage() {
     }
   }
 
-  async function addTask(input: {
-    title: string;
-    notes?: string;
-    priority: Priority;
-    assignedTo: string | null;
-    startDay?: string;
-    endDay?: string;
-    followUp?: string[];
-  }) {
+  async function addTask(input: { title: string; notes?: string; priority: Priority; assignedTo: string | null; startDay?: string, endDay?: string, followUp?: string[]; }) {
     if (!event) return;
     try {
       const created = await createTask({
@@ -140,18 +107,7 @@ export function EventDetailPage() {
     }
   }
 
-  async function editTask(
-    taskId: string,
-    updates: {
-      title: string;
-      notes?: string;
-      priority: Priority;
-      assignedTo: string | null;
-      startDay?: string;
-      endDay?: string;
-      followUp?: string[];
-    },
-  ) {
+  async function editTask(taskId: string, updates: { title: string; notes?: string; priority: Priority; assignedTo: string | null, startDay?: string, endDay?: string, followUp?:string[]}) {
     if (!event) return;
     try {
       await apiEditTask({
@@ -165,9 +121,7 @@ export function EventDetailPage() {
         endDay: updates.endDay,
         followUp: updates.followUp,
       });
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
-      );
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)));
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
     } catch (err) {
@@ -202,15 +156,7 @@ export function EventDetailPage() {
         resolvedBy: nextResolved ? member.id : undefined,
       });
       setIssues((prev) =>
-        prev.map((i) =>
-          i.id === issueId
-            ? {
-                ...i,
-                resolved: nextResolved,
-                resolvedBy: nextResolved ? member.id : undefined,
-              }
-            : i,
-        ),
+        prev.map((i) => (i.id === issueId ? { ...i, resolved: nextResolved, resolvedBy: nextResolved ? member.id : undefined } : i))
       );
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
@@ -224,12 +170,7 @@ export function EventDetailPage() {
     if (!event) return;
     try {
       const member = getIdentity();
-      const created = await createIssue({
-        eventId: event.id,
-        description,
-        severity,
-        raisedBy: member.id,
-      });
+      const created = await createIssue({ eventId: event.id, description, severity, raisedBy: member.id });
       setIssues((prev) => [...prev, created]);
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
@@ -239,21 +180,11 @@ export function EventDetailPage() {
     }
   }
 
-  async function editIssue(
-    issueId: string,
-    updates: { description: string; severity: IssueSeverity },
-  ) {
+  async function editIssue(issueId: string, updates: { description: string; severity: IssueSeverity }) {
     if (!event) return;
     try {
-      await apiEditIssue({
-        eventId: event.id,
-        issueId,
-        description: updates.description,
-        severity: updates.severity,
-      });
-      setIssues((prev) =>
-        prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)),
-      );
+      await apiEditIssue({ eventId: event.id, issueId, description: updates.description, severity: updates.severity });
+      setIssues((prev) => prev.map((i) => (i.id === issueId ? { ...i, ...updates } : i)));
       setRefreshKey((prev) => prev + 1);
       refreshHistory();
     } catch (err) {
@@ -275,24 +206,18 @@ export function EventDetailPage() {
     }
   }
 
-  if (loading)
-    return <div className="p-16 text-center text-ink-soft">Loading event…</div>;
+  if (loading) return <div className="p-16 text-center text-ink-soft">Loading event…</div>;
 
   if (loadError) {
     return (
       <div className="p-16 text-center">
         <p className="text-urgent text-sm mb-3">{loadError}</p>
-        <button onClick={loadEvent} className="text-loop text-sm font-medium">
-          Try again
-        </button>
+        <button onClick={loadEvent} className="text-loop text-sm font-medium">Try again</button>
       </div>
     );
   }
 
-  if (!event)
-    return (
-      <div className="p-16 text-center text-ink-soft">Event not found.</div>
-    );
+  if (!event) return <div className="p-16 text-center text-ink-soft">Event not found.</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-6 sm:px-10 py-10 sm:py-12">
@@ -328,9 +253,7 @@ export function EventDetailPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-3 text-sm border-b-2 -mb-px whitespace-nowrap transition-colors ${
-              activeTab === tab.key
-                ? "text-ink border-loop font-semibold"
-                : "text-ink-soft border-transparent hover:text-ink"
+              activeTab === tab.key ? "text-ink border-loop font-semibold" : "text-ink-soft border-transparent hover:text-ink"
             }`}
           >
             {tab.label}
@@ -364,12 +287,7 @@ export function EventDetailPage() {
         )}
       </div>
 
-      {shareOpen && (
-        <ShareLinkModal
-          inviteCode={event.inviteCode}
-          onClose={() => setShareOpen(false)}
-        />
-      )}
+      {shareOpen && <ShareLinkModal inviteCode={event.inviteCode} onClose={() => setShareOpen(false)} />}
     </div>
   );
 }
