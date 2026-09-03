@@ -259,3 +259,34 @@ func JoinEvent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(event)
 }
+
+func GetMembers(w http.ResponseWriter, r *http.Request) {
+	eventID := chi.URLParam(r, "eventId")
+
+	objectID, err := primitive.ObjectIDFromHex(eventID)
+	if err != nil {
+		http.Error(w, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+
+	collection := database.DB.Collection("events")
+
+	var event models.Event
+	err = collection.FindOne(
+		context.Background(),
+		bson.M{"_id": objectID},
+	).Decode(&event)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Event not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(event.Members)
+}

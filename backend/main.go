@@ -46,6 +46,7 @@ func main() {
 	r.Delete("/api/events/{id}", handlers.DeleteEvent)
 	r.Get("/api/events/{eventId}/tasks", handlers.GetTasks)
 	r.Get("/api/events/{eventId}/issues", handlers.GetIssues)
+	r.Get("/api/events/{eventId}/members", handlers.GetMembers)
 
 	//tasks
 	r.Post("/api/tasks", handlers.CreateTask)

@@ -18,7 +18,7 @@ import {
   resolveIssue,
   deleteIssue,
 } from "../api-handlers/issue";
-import { resolveEventId, resolveTaskId, resolveIssueId } from "./resolvers";
+import { resolveEventId, resolveTaskId, resolveIssueId, resolveMemberId } from "./resolvers";
 import { getIdentity } from "../identity";
 import { getHistory } from "../api-handlers/history";
 
@@ -70,11 +70,13 @@ export function registerLooopTools() {
           description: "ISO date, default to current date if none given",
         },
         endDate: {
-          type: "string",
-          description: "ISO date, omit for ongoing events",
+          type: ["string", "null"],
+          description:
+            "ISO date the event ends. Set to null if the event is ongoing/has no end date. " +
+            "Do not guess — if this isn't clear from context, ask the user whether the event has an end date before calling this tool.",
         },
       },
-      required: ["name", "type", "description", "startDate"],
+      required: ["name", "type", "description", "startDate", "endDate"],
     },
     execute: async (input) => {
       const member = getIdentity();
@@ -147,24 +149,32 @@ export function registerLooopTools() {
         priority: { type: "string", enum: ["urgent", "normal", "optional"] },
         assignedTo: {
           type: "string",
-          description: "member id, omit to leave unassigned",
+          description: "member to assign task to, optional"
         },
         startDay: {
           type: "string",
           description:
-            "ISO date. For a single-day task, set startDay and endDay to the same date.",
+            "ISO date.",
         },
         endDay: {
           type: "string",
           description:
-            "ISO date. Omit both for an unscheduled task that shows on every day.",
+            "ISO date.",
         },
       },
-      required: ["title", "priority"],
+      required: ["title", "notes", "priority", "startDay", "endDay"],
     },
     execute: async (input) => {
       const eventId = await resolveEventId(input);
-      return createTask({ ...input, eventId });
+      const member = getIdentity();
+      if (input.assignedTo == null) {
+        return createTask({ ...input, eventId: eventId, assignedTo: member.id });
+      } else {
+        const memberId = await resolveMemberId(eventId, {
+          memberName: input.assignedTo,
+        });
+        return createTask({ ...input, eventId: eventId, assignedTo: memberId });
+      }
     },
   });
 
@@ -213,7 +223,7 @@ export function registerLooopTools() {
         taskTitle: { type: "string" },
         status: { type: "string", enum: ["todo", "in_progress", "done"] },
       },
-      required: ["status"],
+      required: ["taskTitle", "status"],
     },
     execute: async (input) => {
       const eventId = await resolveEventId(input);

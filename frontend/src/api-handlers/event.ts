@@ -111,3 +111,9 @@ export async function getIssues(eventId: string): Promise<Issue[]> {
   if (!response.ok) throw new Error(`Failed to fetch issues ${response.status}`);
   return response.json();
 }
+
+export async function getMembers(eventId: string): Promise<Member[]> {
+  const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/members`);
+  if (!response.ok) throw new Error(`Failed to fetch members ${response.status}`);
+  return response.json();
+}

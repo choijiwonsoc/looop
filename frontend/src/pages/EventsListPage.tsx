@@ -7,6 +7,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { computeHealth } from '../utils/health';
 import type { EventBoard } from '../types';
 import { getIdentity } from '../identity';
+import { LooopHero } from '../components/Hero';
+import { WebMCPCard } from '../components/WebMCPCard';
 
 interface EnrichedEvent {
   event: EventBoard;
@@ -111,6 +113,7 @@ export function EventsListPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 sm:px-10 py-8 sm:py-10">
+      <LooopHero />
       <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
         <div>
           <p className="text-xs uppercase tracking-wide text-ink-soft mb-1">Dashboard</p>
@@ -142,9 +145,8 @@ export function EventsListPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setTypeFilter(null)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-              typeFilter === null ? 'bg-ink text-white border-ink' : 'border-line-strong text-ink-soft'
-            }`}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${typeFilter === null ? 'bg-ink text-white border-ink' : 'border-line-strong text-ink-soft'
+              }`}
           >
             All
           </button>
@@ -152,9 +154,8 @@ export function EventsListPage() {
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                typeFilter === t ? 'bg-ink text-white border-ink' : 'border-line-strong text-ink-soft'
-              }`}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${typeFilter === t ? 'bg-ink text-white border-ink' : 'border-line-strong text-ink-soft'
+                }`}
             >
               {t}
             </button>
@@ -195,6 +196,10 @@ export function EventsListPage() {
           onCancel={() => setDeletingEvent(null)}
         />
       )}
+      <div className="mt-10">
+        <WebMCPCard />
+      </div>
     </div>
+
   );
 }
