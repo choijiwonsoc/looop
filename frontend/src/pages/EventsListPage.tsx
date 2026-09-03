@@ -199,6 +199,9 @@ export function EventsListPage() {
       <div className="mt-10">
         <WebMCPCard />
       </div>
+      <button onClick={() => localStorage.removeItem("looop_identity")}>
+        Reset Identity
+      </button>
     </div>
 
   );
